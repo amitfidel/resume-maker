@@ -351,7 +351,91 @@ export async function updateSummary(resumeId: string, summary: string) {
 }
 
 /**
- * Update an item's text override (e.g., a bullet point).
+ * Update a top-level field override on an item (e.g., title, company, degree).
+ * Merges with existing overrides - does not replace them.
+ */
+export async function updateItemField(
+  resumeId: string,
+  itemId: string,
+  field: string,
+  value: string | null
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const existing = await db.query.resumeBlockItems.findFirst({
+    where: eq(resumeBlockItems.id, itemId),
+  });
+  if (!existing) return;
+
+  const currentOverrides = (existing.overrides ?? {}) as Record<string, unknown>;
+  const newOverrides =
+    value === null || value === ""
+      ? (() => {
+          const o = { ...currentOverrides };
+          delete o[field];
+          return o;
+        })()
+      : { ...currentOverrides, [field]: value };
+
+  await db
+    .update(resumeBlockItems)
+    .set({ overrides: newOverrides, updatedAt: new Date() })
+    .where(eq(resumeBlockItems.id, itemId));
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Update a bullet within an item's overrides (merges with existing overrides).
+ */
+export async function updateBulletText(
+  resumeId: string,
+  itemId: string,
+  bulletId: string,
+  newText: string
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const existing = await db.query.resumeBlockItems.findFirst({
+    where: eq(resumeBlockItems.id, itemId),
+  });
+  if (!existing) return;
+
+  const currentOverrides = (existing.overrides ?? {}) as Record<string, unknown>;
+  const currentBullets = (currentOverrides.bullets ?? {}) as Record<
+    string,
+    { text?: string; visible?: boolean }
+  >;
+
+  const newOverrides = {
+    ...currentOverrides,
+    bullets: {
+      ...currentBullets,
+      [bulletId]: { ...currentBullets[bulletId], text: newText },
+    },
+  };
+
+  await db
+    .update(resumeBlockItems)
+    .set({ overrides: newOverrides, updatedAt: new Date() })
+    .where(eq(resumeBlockItems.id, itemId));
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Deprecated: kept for backward compat - updateItemOverride replaces overrides.
+ * Prefer updateItemField and updateBulletText.
  */
 export async function updateItemOverride(
   resumeId: string,

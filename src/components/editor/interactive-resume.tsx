@@ -5,11 +5,13 @@ import { EditableText } from "./editable-text";
 import {
   updateSummary,
   updateBlockHeading,
-  updateItemOverride,
+  updateItemField,
+  updateBulletText,
 } from "@/app/(dashboard)/resumes/actions";
 import type {
   ResolvedResume,
   ResolvedBlock,
+  ResolvedBlockItem,
   ResolvedExperience,
   ResolvedEducation,
   ResolvedSkill,
@@ -130,18 +132,31 @@ function InteractiveBlock({
         <ExperienceItems items={visibleItems} resumeId={resumeId} />
       )}
       {block.type === "education" && (
-        <EducationItems items={visibleItems} />
+        <EducationItems items={visibleItems} resumeId={resumeId} />
       )}
       {block.type === "skills" && (
-        <SkillsItems items={visibleItems} />
+        <SkillsItems items={visibleItems} resumeId={resumeId} />
       )}
       {block.type === "projects" && (
         <ProjectItems items={visibleItems} resumeId={resumeId} />
       )}
       {block.type === "certifications" && (
-        <CertItems items={visibleItems} />
+        <CertItems items={visibleItems} resumeId={resumeId} />
       )}
     </section>
+  );
+}
+
+// ============================================================
+// Reusable editable field hook
+// ============================================================
+
+function useFieldUpdater(resumeId: string, itemId: string) {
+  return useCallback(
+    (field: string) => (value: string) => {
+      updateItemField(resumeId, itemId, field, value);
+    },
+    [resumeId, itemId]
   );
 }
 
@@ -153,50 +168,69 @@ function ExperienceItems({
   items,
   resumeId,
 }: {
-  items: ResolvedBlock["items"];
+  items: ResolvedBlockItem[];
   resumeId: string;
 }) {
   return (
     <div className="space-y-3">
-      {items.map((item) => {
-        const exp = item.data as ResolvedExperience;
-        const visibleBullets = exp.bullets.filter((b) => b.visible);
+      {items.map((item) => (
+        <ExperienceCard key={item.id} item={item} resumeId={resumeId} />
+      ))}
+    </div>
+  );
+}
 
-        return (
-          <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="font-semibold text-gray-900">{exp.title}</span>
-                <span className="text-gray-600"> | {exp.company}</span>
-                {exp.location && (
-                  <span className="text-gray-400"> | {exp.location}</span>
-                )}
-              </div>
-              <span className="shrink-0 text-xs text-gray-500">
-                {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}
-              </span>
-            </div>
-            {visibleBullets.length > 0 && (
-              <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm text-gray-700">
-                {visibleBullets.map((bullet) => (
-                  <EditableBullet
-                    key={bullet.id}
-                    bulletId={bullet.id}
-                    text={bullet.text}
-                    itemId={item.id}
-                    resumeId={resumeId}
-                    currentOverrides={
-                      item.hasOverrides
-                        ? (undefined as unknown as Record<string, unknown>)
-                        : undefined
-                    }
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+function ExperienceCard({
+  item,
+  resumeId,
+}: {
+  item: ResolvedBlockItem;
+  resumeId: string;
+}) {
+  const exp = item.data as ResolvedExperience;
+  const visibleBullets = exp.bullets.filter((b) => b.visible);
+  const setField = useFieldUpdater(resumeId, item.id);
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <EditableText
+            value={exp.title}
+            onSave={setField("title")}
+            className="font-semibold text-gray-900"
+          />
+          <span className="text-gray-600"> | </span>
+          <EditableText
+            value={exp.company}
+            onSave={setField("company")}
+            className="text-gray-600"
+          />
+          <span className="text-gray-400"> | </span>
+          <EditableText
+            value={exp.location || ""}
+            onSave={setField("location")}
+            className="text-gray-400"
+            placeholder="Location"
+          />
+        </div>
+        <span className="shrink-0 text-xs text-gray-500">
+          {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}
+        </span>
+      </div>
+      {visibleBullets.length > 0 && (
+        <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm text-gray-700">
+          {visibleBullets.map((bullet) => (
+            <EditableBullet
+              key={bullet.id}
+              bulletId={bullet.id}
+              text={bullet.text}
+              itemId={item.id}
+              resumeId={resumeId}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -211,13 +245,10 @@ function EditableBullet({
   text: string;
   itemId: string;
   resumeId: string;
-  currentOverrides?: Record<string, unknown>;
 }) {
   const handleSave = useCallback(
     (newText: string) => {
-      updateItemOverride(resumeId, itemId, {
-        bullets: { [bulletId]: { text: newText } },
-      });
+      updateBulletText(resumeId, itemId, bulletId, newText);
     },
     [resumeId, itemId, bulletId]
   );
@@ -233,29 +264,68 @@ function EditableBullet({
 // Education
 // ============================================================
 
-function EducationItems({ items }: { items: ResolvedBlock["items"] }) {
+function EducationItems({
+  items,
+  resumeId,
+}: {
+  items: ResolvedBlockItem[];
+  resumeId: string;
+}) {
   return (
     <div className="space-y-2">
-      {items.map((item) => {
-        const edu = item.data as ResolvedEducation;
-        return (
-          <div key={item.id} className="flex items-baseline justify-between">
-            <div>
-              <span className="font-semibold text-gray-900">
-                {edu.degree}
-                {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
-              </span>
-              <span className="text-gray-600"> | {edu.institution}</span>
-              {edu.gpa && (
-                <span className="text-gray-400"> | GPA: {edu.gpa}</span>
-              )}
-            </div>
-            <span className="shrink-0 text-xs text-gray-500">
-              {formatDateRange(edu.startDate, edu.endDate)}
-            </span>
-          </div>
-        );
-      })}
+      {items.map((item) => (
+        <EducationCard key={item.id} item={item} resumeId={resumeId} />
+      ))}
+    </div>
+  );
+}
+
+function EducationCard({
+  item,
+  resumeId,
+}: {
+  item: ResolvedBlockItem;
+  resumeId: string;
+}) {
+  const edu = item.data as ResolvedEducation;
+  const setField = useFieldUpdater(resumeId, item.id);
+
+  return (
+    <div className="flex items-baseline justify-between gap-2">
+      <div className="flex-1 min-w-0">
+        <EditableText
+          value={edu.degree}
+          onSave={setField("degree")}
+          className="font-semibold text-gray-900"
+        />
+        {(edu.fieldOfStudy || true) && (
+          <>
+            <span className="text-gray-900"> in </span>
+            <EditableText
+              value={edu.fieldOfStudy || ""}
+              onSave={setField("fieldOfStudy")}
+              className="font-semibold text-gray-900"
+              placeholder="Field of Study"
+            />
+          </>
+        )}
+        <span className="text-gray-600"> | </span>
+        <EditableText
+          value={edu.institution}
+          onSave={setField("institution")}
+          className="text-gray-600"
+        />
+        <span className="text-gray-400"> | GPA: </span>
+        <EditableText
+          value={edu.gpa || ""}
+          onSave={setField("gpa")}
+          className="text-gray-400"
+          placeholder="—"
+        />
+      </div>
+      <span className="shrink-0 text-xs text-gray-500">
+        {formatDateRange(edu.startDate, edu.endDate)}
+      </span>
     </div>
   );
 }
@@ -264,30 +334,64 @@ function EducationItems({ items }: { items: ResolvedBlock["items"] }) {
 // Skills
 // ============================================================
 
-function SkillsItems({ items }: { items: ResolvedBlock["items"] }) {
-  const skills = items.map((i) => i.data as ResolvedSkill);
-  const grouped = skills.reduce<Record<string, ResolvedSkill[]>>(
-    (acc, skill) => {
-      const cat = skill.category || "Other";
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(skill);
-      return acc;
-    },
-    {}
-  );
+function SkillsItems({
+  items,
+  resumeId,
+}: {
+  items: ResolvedBlockItem[];
+  resumeId: string;
+}) {
+  // Group by category (from resolved data)
+  const grouped = items.reduce<
+    Record<string, Array<{ item: ResolvedBlockItem; skill: ResolvedSkill }>>
+  >((acc, item) => {
+    const skill = item.data as ResolvedSkill;
+    const cat = skill.category || "Other";
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push({ item, skill });
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-1">
-      {Object.entries(grouped).map(([category, categorySkills]) => (
+      {Object.entries(grouped).map(([category, entries]) => (
         <div key={category} className="text-sm">
           <span className="font-semibold text-gray-900">{category}:</span>{" "}
           <span className="text-gray-700">
-            {categorySkills.map((s) => s.name).join(", ")}
+            {entries.map((e, i) => (
+              <span key={e.item.id}>
+                <EditableSkill
+                  item={e.item}
+                  name={e.skill.name}
+                  resumeId={resumeId}
+                />
+                {i < entries.length - 1 && ", "}
+              </span>
+            ))}
           </span>
         </div>
       ))}
     </div>
   );
+}
+
+function EditableSkill({
+  item,
+  name,
+  resumeId,
+}: {
+  item: ResolvedBlockItem;
+  name: string;
+  resumeId: string;
+}) {
+  const handleSave = useCallback(
+    (newName: string) => {
+      updateItemField(resumeId, item.id, "name", newName);
+    },
+    [resumeId, item.id]
+  );
+
+  return <EditableText value={name} onSave={handleSave} className="text-sm" />;
 }
 
 // ============================================================
@@ -298,46 +402,65 @@ function ProjectItems({
   items,
   resumeId,
 }: {
-  items: ResolvedBlock["items"];
+  items: ResolvedBlockItem[];
   resumeId: string;
 }) {
   return (
     <div className="space-y-2">
-      {items.map((item) => {
-        const proj = item.data as ResolvedProject;
-        const visibleBullets = proj.bullets.filter((b) => b.visible);
+      {items.map((item) => (
+        <ProjectCard key={item.id} item={item} resumeId={resumeId} />
+      ))}
+    </div>
+  );
+}
 
-        return (
-          <div key={item.id}>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="font-semibold text-gray-900">{proj.name}</span>
-                {proj.technologies && proj.technologies.length > 0 && (
-                  <span className="text-gray-400">
-                    {" "}| {proj.technologies.join(", ")}
-                  </span>
-                )}
-              </div>
-            </div>
-            {proj.description && (
-              <p className="text-sm text-gray-600">{proj.description}</p>
-            )}
-            {visibleBullets.length > 0 && (
-              <ul className="mt-0.5 list-inside list-disc space-y-0.5 text-sm text-gray-700">
-                {visibleBullets.map((bullet) => (
-                  <EditableBullet
-                    key={bullet.id}
-                    bulletId={bullet.id}
-                    text={bullet.text}
-                    itemId={item.id}
-                    resumeId={resumeId}
-                  />
-                ))}
-              </ul>
-            )}
-          </div>
-        );
-      })}
+function ProjectCard({
+  item,
+  resumeId,
+}: {
+  item: ResolvedBlockItem;
+  resumeId: string;
+}) {
+  const proj = item.data as ResolvedProject;
+  const visibleBullets = proj.bullets.filter((b) => b.visible);
+  const setField = useFieldUpdater(resumeId, item.id);
+
+  return (
+    <div>
+      <div>
+        <EditableText
+          value={proj.name}
+          onSave={setField("name")}
+          className="font-semibold text-gray-900"
+        />
+        {proj.technologies && proj.technologies.length > 0 && (
+          <span className="text-gray-400">
+            {" "}| {proj.technologies.join(", ")}
+          </span>
+        )}
+      </div>
+      {(proj.description || true) && (
+        <EditableText
+          as="p"
+          value={proj.description || ""}
+          onSave={setField("description")}
+          className="text-sm text-gray-600"
+          placeholder="Add description..."
+        />
+      )}
+      {visibleBullets.length > 0 && (
+        <ul className="mt-0.5 list-inside list-disc space-y-0.5 text-sm text-gray-700">
+          {visibleBullets.map((bullet) => (
+            <EditableBullet
+              key={bullet.id}
+              bulletId={bullet.id}
+              text={bullet.text}
+              itemId={item.id}
+              resumeId={resumeId}
+            />
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -346,33 +469,56 @@ function ProjectItems({
 // Certifications
 // ============================================================
 
-function CertItems({ items }: { items: ResolvedBlock["items"] }) {
+function CertItems({
+  items,
+  resumeId,
+}: {
+  items: ResolvedBlockItem[];
+  resumeId: string;
+}) {
   return (
     <div className="space-y-1">
-      {items.map((item) => {
-        const cert = item.data as ResolvedCertification;
-        return (
-          <div
-            key={item.id}
-            className="flex items-baseline justify-between text-sm"
-          >
-            <div>
-              <span className="font-semibold text-gray-900">{cert.name}</span>
-              {cert.issuer && (
-                <span className="text-gray-600"> | {cert.issuer}</span>
-              )}
-            </div>
-            {cert.issueDate && (
-              <span className="text-xs text-gray-500">
-                {new Date(cert.issueDate + "T00:00:00").toLocaleDateString(
-                  "en-US",
-                  { month: "short", year: "numeric" }
-                )}
-              </span>
-            )}
-          </div>
-        );
-      })}
+      {items.map((item) => (
+        <CertCard key={item.id} item={item} resumeId={resumeId} />
+      ))}
+    </div>
+  );
+}
+
+function CertCard({
+  item,
+  resumeId,
+}: {
+  item: ResolvedBlockItem;
+  resumeId: string;
+}) {
+  const cert = item.data as ResolvedCertification;
+  const setField = useFieldUpdater(resumeId, item.id);
+
+  return (
+    <div className="flex items-baseline justify-between gap-2 text-sm">
+      <div className="flex-1 min-w-0">
+        <EditableText
+          value={cert.name}
+          onSave={setField("name")}
+          className="font-semibold text-gray-900"
+        />
+        <span className="text-gray-600"> | </span>
+        <EditableText
+          value={cert.issuer || ""}
+          onSave={setField("issuer")}
+          className="text-gray-600"
+          placeholder="Issuer"
+        />
+      </div>
+      {cert.issueDate && (
+        <span className="shrink-0 text-xs text-gray-500">
+          {new Date(cert.issueDate + "T00:00:00").toLocaleDateString(
+            "en-US",
+            { month: "short", year: "numeric" }
+          )}
+        </span>
+      )}
     </div>
   );
 }
