@@ -122,15 +122,32 @@ export async function resolveResume(
     // Resolve each item
     const resolvedItems: ResolvedBlockItem[] = sortedItems
       .map((item) => {
+        const overrides = (item.overrides ?? {}) as Record<string, unknown>;
+        const hasOverrides = Object.keys(overrides).length > 0;
+
+        // Custom items: data is stored entirely in overrides
+        if (item.sourceType === "custom") {
+          return {
+            id: item.id,
+            sourceId: item.sourceId,
+            sourceType: item.sourceType,
+            sortOrder: item.sortOrder,
+            isVisible: item.isVisible,
+            data: {
+              id: item.id,
+              text: (overrides.text as string) ?? "",
+              title: (overrides.title as string) ?? "",
+            },
+            hasOverrides,
+          } as ResolvedBlockItem;
+        }
+
         const sourceMap =
           profileData[item.sourceType as keyof typeof profileData];
         if (!sourceMap) return null;
 
         const sourceData = sourceMap.get(item.sourceId);
         if (!sourceData) return null;
-
-        const overrides = (item.overrides ?? {}) as Record<string, unknown>;
-        const hasOverrides = Object.keys(overrides).length > 0;
 
         const resolved = resolveItem(
           item.sourceType,

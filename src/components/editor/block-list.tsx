@@ -17,6 +17,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { SortableBlock } from "./sortable-block";
+import { AddSectionButton } from "./add-section-button";
 import { reorderBlocks, toggleBlockVisibility } from "@/app/(dashboard)/resumes/actions";
 import type { ResolvedBlock } from "@/lib/resume/types";
 
@@ -86,6 +87,11 @@ export function BlockList({ resumeId, blocks: initialBlocks }: Props) {
           </div>
         </SortableContext>
       </DndContext>
+
+      <AddSectionButton
+        resumeId={resumeId}
+        existingBlockTypes={blocks.map((b) => b.type)}
+      />
     </div>
   );
 }

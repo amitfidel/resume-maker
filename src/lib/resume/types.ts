@@ -15,7 +15,14 @@ export type SourceType =
   | "education"
   | "skill"
   | "project"
-  | "certification";
+  | "certification"
+  | "custom";
+
+export type ResolvedCustomItem = {
+  id: string;
+  text: string;
+  title: string;
+};
 
 // ============================================================
 // Resolved data types (profile data merged with overrides)

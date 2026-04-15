@@ -7,12 +7,14 @@ import {
   resumeBlockItems,
   careerProfiles,
   workExperiences,
+  experienceBullets,
   education,
   skills,
   projects,
+  projectBullets,
   certifications,
 } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, max } from "drizzle-orm";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -482,4 +484,273 @@ export async function deleteResume(resumeId: string) {
     .where(and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)));
 
   redirect("/resumes");
+}
+
+// ============================================================
+// Add new items to resume sections
+// ============================================================
+
+/**
+ * Add a new empty item to a block. Creates both the profile item and
+ * the resume_block_item that references it.
+ */
+export async function addItemToBlock(resumeId: string, blockId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const block = await db.query.resumeBlocks.findFirst({
+    where: and(
+      eq(resumeBlocks.id, blockId),
+      eq(resumeBlocks.resumeId, resumeId)
+    ),
+  });
+  if (!block) return;
+
+  const profile = await db.query.careerProfiles.findFirst({
+    where: eq(careerProfiles.userId, user.id),
+  });
+  if (!profile) return;
+
+  // Get next sort order
+  const [{ maxOrder }] = await db
+    .select({ maxOrder: max(resumeBlockItems.sortOrder) })
+    .from(resumeBlockItems)
+    .where(eq(resumeBlockItems.blockId, blockId));
+  const nextOrder = (maxOrder ?? -1) + 1;
+
+  let sourceType: SourceType | "custom" = "custom";
+  let sourceId: string | null = null;
+
+  // Create a profile item based on the block type
+  switch (block.blockType) {
+    case "experience": {
+      const [exp] = await db
+        .insert(workExperiences)
+        .values({
+          profileId: profile.id,
+          company: "Company",
+          title: "Job Title",
+          startDate: new Date().toISOString().split("T")[0],
+        })
+        .returning();
+      sourceType = "work_experience";
+      sourceId = exp.id;
+      break;
+    }
+    case "education": {
+      const [edu] = await db
+        .insert(education)
+        .values({
+          profileId: profile.id,
+          institution: "University",
+          degree: "Degree",
+        })
+        .returning();
+      sourceType = "education";
+      sourceId = edu.id;
+      break;
+    }
+    case "skills": {
+      const [skill] = await db
+        .insert(skills)
+        .values({
+          profileId: profile.id,
+          name: "New Skill",
+          category: "Other",
+        })
+        .returning();
+      sourceType = "skill";
+      sourceId = skill.id;
+      break;
+    }
+    case "projects": {
+      const [proj] = await db
+        .insert(projects)
+        .values({
+          profileId: profile.id,
+          name: "Project Name",
+        })
+        .returning();
+      sourceType = "project";
+      sourceId = proj.id;
+      break;
+    }
+    case "certifications": {
+      const [cert] = await db
+        .insert(certifications)
+        .values({
+          profileId: profile.id,
+          name: "Certification Name",
+        })
+        .returning();
+      sourceType = "certification";
+      sourceId = cert.id;
+      break;
+    }
+    case "custom":
+    default:
+      // Custom items don't have a profile source - data stored in overrides
+      sourceType = "custom";
+      sourceId = crypto.randomUUID();
+      break;
+  }
+
+  await db.insert(resumeBlockItems).values({
+    blockId,
+    sourceType,
+    sourceId: sourceId!,
+    sortOrder: nextOrder,
+    isVisible: true,
+    overrides:
+      sourceType === "custom"
+        ? { title: "New Item", text: "Description" }
+        : {},
+  });
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Remove an item from a resume (doesn't delete from profile).
+ */
+export async function removeItemFromBlock(resumeId: string, itemId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  await db.delete(resumeBlockItems).where(eq(resumeBlockItems.id, itemId));
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Add a new bullet to an experience or project. Creates the bullet in the
+ * profile source table so it's reusable across resumes.
+ */
+export async function addBulletToItem(
+  resumeId: string,
+  itemId: string
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const item = await db.query.resumeBlockItems.findFirst({
+    where: eq(resumeBlockItems.id, itemId),
+  });
+  if (!item) return;
+
+  if (item.sourceType === "work_experience") {
+    const [{ maxOrder }] = await db
+      .select({ maxOrder: max(experienceBullets.sortOrder) })
+      .from(experienceBullets)
+      .where(eq(experienceBullets.experienceId, item.sourceId));
+    await db.insert(experienceBullets).values({
+      experienceId: item.sourceId,
+      text: "New accomplishment or responsibility",
+      sortOrder: (maxOrder ?? -1) + 1,
+    });
+  } else if (item.sourceType === "project") {
+    const [{ maxOrder }] = await db
+      .select({ maxOrder: max(projectBullets.sortOrder) })
+      .from(projectBullets)
+      .where(eq(projectBullets.projectId, item.sourceId));
+    await db.insert(projectBullets).values({
+      projectId: item.sourceId,
+      text: "New point",
+      sortOrder: (maxOrder ?? -1) + 1,
+    });
+  }
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Add a new custom section to the resume.
+ */
+export async function addCustomSection(resumeId: string, heading: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const [{ maxOrder }] = await db
+    .select({ maxOrder: max(resumeBlocks.sortOrder) })
+    .from(resumeBlocks)
+    .where(eq(resumeBlocks.resumeId, resumeId));
+
+  await db.insert(resumeBlocks).values({
+    resumeId,
+    blockType: "custom",
+    headingOverride: heading,
+    sortOrder: (maxOrder ?? -1) + 1,
+    isVisible: true,
+  });
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Add an existing-type section (experience, education, etc.) to a resume
+ * that doesn't have one yet.
+ */
+export async function addStandardSection(
+  resumeId: string,
+  blockType: BlockType
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const [{ maxOrder }] = await db
+    .select({ maxOrder: max(resumeBlocks.sortOrder) })
+    .from(resumeBlocks)
+    .where(eq(resumeBlocks.resumeId, resumeId));
+
+  await db.insert(resumeBlocks).values({
+    resumeId,
+    blockType,
+    sortOrder: (maxOrder ?? -1) + 1,
+    isVisible: true,
+  });
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Delete a section from the resume (doesn't affect profile).
+ */
+export async function deleteBlock(resumeId: string, blockId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  await db
+    .delete(resumeBlocks)
+    .where(
+      and(
+        eq(resumeBlocks.id, blockId),
+        eq(resumeBlocks.resumeId, resumeId)
+      )
+    );
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
 }
