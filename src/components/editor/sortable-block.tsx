@@ -3,8 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { GripVertical, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { GripVertical, Eye, EyeOff, ChevronRight } from "lucide-react";
 import type { ResolvedBlock } from "@/lib/resume/types";
 
 type Props = {
@@ -14,12 +13,12 @@ type Props = {
 
 const BLOCK_ICONS: Record<string, string> = {
   summary: "S",
-  experience: "E",
-  education: "Ed",
-  skills: "Sk",
-  projects: "Pr",
-  certifications: "Ce",
-  custom: "Cu",
+  experience: "W",
+  education: "E",
+  skills: "S",
+  projects: "P",
+  certifications: "C",
+  custom: "X",
 };
 
 export function SortableBlock({ block, onToggleVisibility }: Props) {
@@ -42,42 +41,38 @@ export function SortableBlock({ block, onToggleVisibility }: Props) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-2 rounded-lg border bg-card p-3 transition-shadow",
-        isDragging && "shadow-lg opacity-90 z-50",
-        !block.isVisible && "opacity-50"
+        "flex items-center gap-2.5 rounded-md px-3 py-2.5 transition-all cursor-pointer",
+        isDragging && "shadow-ambient opacity-90 z-50 bg-[var(--surface-container-lowest)]",
+        block.isVisible
+          ? "text-[var(--on-surface)] hover:bg-[var(--surface-container)]"
+          : "text-[var(--on-surface-variant)] opacity-50"
       )}
     >
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
+        className="cursor-grab touch-none text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
       >
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="flex h-8 w-8 items-center justify-center rounded bg-muted text-xs font-semibold text-muted-foreground">
-        {BLOCK_ICONS[block.type] ?? "?"}
-      </div>
-
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{block.heading}</p>
-        <p className="text-xs text-muted-foreground">
-          {block.items.length} item{block.items.length !== 1 ? "s" : ""}
-        </p>
       </div>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0"
-        onClick={() => onToggleVisibility(block.id)}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleVisibility(block.id);
+        }}
+        className="text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
       >
         {block.isVisible ? (
           <Eye className="h-3.5 w-3.5" />
         ) : (
           <EyeOff className="h-3.5 w-3.5" />
         )}
-      </Button>
+      </button>
     </div>
   );
 }

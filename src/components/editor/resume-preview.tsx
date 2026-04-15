@@ -9,7 +9,7 @@ type Props = {
 
 export function ResumePreview({ resume }: Props) {
   return (
-    <div className="rounded-lg border shadow-sm overflow-auto">
+    <div className="rounded-lg bg-[var(--surface-container-lowest)] shadow-ambient overflow-auto">
       <InteractiveResume resume={resume} />
     </div>
   );

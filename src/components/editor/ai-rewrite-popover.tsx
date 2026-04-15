@@ -11,10 +11,9 @@ type Props = {
 };
 
 const ACTIONS = [
-  { id: "improve", label: "Improve", icon: "✨" },
-  { id: "concise", label: "Concise", icon: "✂️" },
-  { id: "metrics", label: "Add Metrics", icon: "📊" },
-  { id: "stronger", label: "Stronger", icon: "💪" },
+  { id: "improve", label: "AI Suggestion", color: "magical-gradient text-white" },
+  { id: "concise", label: "Improve", color: "bg-[var(--surface-container)] text-[var(--on-surface)]" },
+  { id: "metrics", label: "Add Metrics", color: "bg-[var(--surface-container)] text-[var(--on-surface)]" },
 ] as const;
 
 export function AiRewritePopover({ text, onAccept, onDismiss }: Props) {
@@ -52,56 +51,49 @@ export function AiRewritePopover({ text, onAccept, onDismiss }: Props) {
 
   return (
     <div
-      className="w-80 rounded-lg border bg-popover p-3 shadow-lg"
+      className="w-80 rounded-lg bg-[var(--surface-container-lowest)] p-4 shadow-ambient border-ghost"
       onMouseDown={(e) => e.preventDefault()}
     >
       {/* Action buttons */}
       {!suggestion && !isLoading && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            AI Rewrite
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {ACTIONS.map((action) => (
-              <Button
-                key={action.id}
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => handleAction(action.id)}
-              >
-                <span className="mr-1">{action.icon}</span>
-                {action.label}
-              </Button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-2">
+          {ACTIONS.map((action) => (
+            <button
+              key={action.id}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-opacity hover:opacity-80 ${action.color}`}
+              onClick={() => handleAction(action.id)}
+            >
+              {action.label}
+            </button>
+          ))}
         </div>
       )}
 
       {/* Loading */}
       {isLoading && (
-        <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
+        <div className="flex items-center gap-2 py-2 text-sm text-[var(--on-surface-variant)]">
+          <Loader2 className="h-4 w-4 animate-spin text-[var(--tertiary)]" />
           Rewriting...
         </div>
       )}
 
       {/* Result */}
       {suggestion && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Suggestion</p>
-          <div className="rounded-md bg-muted p-2 text-sm">{suggestion}</div>
-          <div className="flex gap-1.5">
+        <div className="space-y-3">
+          <div className="rounded-md bg-[var(--tertiary-fixed)] p-3 text-sm text-[var(--on-surface)]">
+            {suggestion}
+          </div>
+          <div className="flex gap-2">
             <Button
               size="sm"
-              className="h-7 flex-1 text-xs"
+              className="h-7 flex-1 text-xs magical-gradient text-white"
               onClick={() => onAccept(suggestion)}
             >
               <Check className="mr-1 h-3 w-3" />
               Accept
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               className="h-7 text-xs"
               onClick={() => setSuggestion(null)}

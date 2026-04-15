@@ -9,9 +9,11 @@ export default async function ApplicationsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Applications</h1>
-        <p className="mt-1 text-muted-foreground">
-          Track your job applications and outcomes.
+        <h1 className="font-headline text-3xl font-bold text-[var(--on-surface)]">
+          Applications Tracker
+        </h1>
+        <p className="mt-1 text-[var(--on-surface-variant)]">
+          Manage your professional journey with editorial precision.
         </p>
       </div>
 
