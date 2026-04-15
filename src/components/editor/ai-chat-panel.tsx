@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  MessageCircle,
   X,
   Send,
   Loader2,
   Sparkles,
   CheckCircle2,
+  Mic,
+  MicOff,
 } from "lucide-react";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { cn } from "@/lib/utils";
 
 type Message = {
   role: "user" | "assistant";
@@ -43,6 +46,37 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const baseInputRef = useRef<string>("");
+
+  // Speech recognition - appends transcripts to the input
+  const handleTranscript = useCallback(
+    (transcript: string, isFinal: boolean) => {
+      if (isFinal) {
+        // Append final transcript to the base input with a space
+        const newBase =
+          (baseInputRef.current ? baseInputRef.current + " " : "") + transcript.trim();
+        baseInputRef.current = newBase;
+        setInput(newBase);
+      } else {
+        // Show interim transcript alongside base
+        const preview = baseInputRef.current
+          ? baseInputRef.current + " " + transcript
+          : transcript;
+        setInput(preview);
+      }
+    },
+    []
+  );
+
+  const { isSupported, isListening, error: speechError, toggle, stop } =
+    useSpeechRecognition({ onTranscript: handleTranscript });
+
+  // Keep baseInputRef in sync when user manually edits the input
+  useEffect(() => {
+    if (!isListening) {
+      baseInputRef.current = input;
+    }
+  }, [input, isListening]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -53,6 +87,10 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
 
   const sendMessage = useCallback(
     async (text: string) => {
+      // Stop listening before sending
+      stop();
+      baseInputRef.current = "";
+
       const userMsg: Message = { role: "user", content: text };
       const newMessages = [...messages, userMsg];
       setMessages(newMessages);
@@ -92,7 +130,6 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
             },
           ]);
 
-          // If changes were made, refresh the page to show them
           if (data.actions && data.actions.length > 0) {
             router.refresh();
           }
@@ -107,7 +144,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
         setIsLoading(false);
       }
     },
-    [messages, resumeId, router]
+    [messages, resumeId, router, stop]
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -154,7 +191,6 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
             >
               <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
 
-              {/* Action chips */}
               {msg.actions && msg.actions.length > 0 && (
                 <div className="mt-3 space-y-1.5 border-t border-white/10 pt-3">
                   {msg.actions.map((action, ai) => (
@@ -186,7 +222,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
         )}
       </div>
 
-      {/* Suggestions (only show if only greeting message) */}
+      {/* Suggestions */}
       {messages.length === 1 && !isLoading && (
         <div className="border-t border-ghost px-4 py-3 bg-[var(--surface-container-low)]">
           <p className="text-[0.7rem] font-medium uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
@@ -206,6 +242,25 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
         </div>
       )}
 
+      {/* Listening indicator */}
+      {isListening && (
+        <div className="flex items-center gap-2 border-t border-ghost px-4 py-2 bg-red-50 text-xs text-red-700">
+          <div className="flex gap-0.5">
+            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "0ms" }} />
+            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "150ms" }} />
+            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "300ms" }} />
+            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "450ms" }} />
+          </div>
+          <span>Listening… speak clearly. Click the mic to stop.</span>
+        </div>
+      )}
+
+      {speechError && (
+        <div className="border-t border-ghost px-4 py-2 bg-amber-50 text-xs text-amber-700">
+          Mic error: {speechError}
+        </div>
+      )}
+
       {/* Input */}
       <form
         onSubmit={handleSubmit}
@@ -221,20 +276,43 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
                 handleSubmit(e);
               }
             }}
-            placeholder="Ask me to change something..."
+            placeholder={isListening ? "Listening..." : "Ask me to change something..."}
             rows={2}
             className="flex-1 resize-none bg-[var(--surface-container-lowest)] border-ghost text-sm"
             disabled={isLoading}
           />
-          <Button
-            type="submit"
-            size="icon"
-            className="magical-gradient text-white h-9 w-9 shrink-0"
-            disabled={!input.trim() || isLoading}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
+          <div className="flex flex-col gap-1.5">
+            {isSupported && (
+              <Button
+                type="button"
+                size="icon"
+                variant={isListening ? "default" : "outline"}
+                onClick={toggle}
+                disabled={isLoading}
+                className={cn(
+                  "h-9 w-9 shrink-0",
+                  isListening && "bg-red-500 hover:bg-red-600 text-white animate-pulse"
+                )}
+                title={isListening ? "Stop listening" : "Speak your message"}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+            )}
+            <Button
+              type="submit"
+              size="icon"
+              className="magical-gradient text-white h-9 w-9 shrink-0"
+              disabled={!input.trim() || isLoading}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
+        {!isSupported && (
+          <p className="mt-1.5 text-[0.65rem] text-[var(--on-surface-variant)]">
+            Voice input requires Chrome, Edge, or Safari.
+          </p>
+        )}
       </form>
     </aside>
   );
