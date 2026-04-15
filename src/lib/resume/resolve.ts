@@ -30,6 +30,162 @@ import {
 } from "./types";
 
 /**
+ * Resolves a snapshot (from resume_versions) against the current profile data.
+ * Used for previewing past versions. If profile items referenced by the snapshot
+ * were deleted, they're skipped.
+ */
+export async function resolveSnapshot(
+  snapshot: {
+    title: string;
+    templateId: string;
+    headerOverrides: Record<string, string> | null;
+    summaryOverride: string | null;
+    settings: Record<string, unknown> | null;
+    blocks: Array<{
+      blockType: string;
+      headingOverride: string | null;
+      sortOrder: number;
+      isVisible: boolean;
+      config: Record<string, unknown> | null;
+      items: Array<{
+        sourceType: string;
+        sourceId: string;
+        sortOrder: number;
+        isVisible: boolean;
+        overrides: Record<string, unknown> | null;
+      }>;
+    }>;
+  },
+  userId: string,
+  resumeId: string
+): Promise<ResolvedResume | null> {
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  const profile = await db.query.careerProfiles.findFirst({
+    where: eq(careerProfiles.userId, userId),
+  });
+  if (!user || !profile) return null;
+
+  const [expList, eduList, skillList, projList, certList] = await Promise.all([
+    db.query.workExperiences.findMany({
+      where: eq(workExperiences.profileId, profile.id),
+      with: { bullets: { orderBy: (b, { asc }) => [asc(b.sortOrder)] } },
+    }),
+    db.query.education.findMany({
+      where: eq(education.profileId, profile.id),
+    }),
+    db.query.skills.findMany({
+      where: eq(skills.profileId, profile.id),
+    }),
+    db.query.projects.findMany({
+      where: eq(projects.profileId, profile.id),
+      with: { bullets: { orderBy: (b, { asc }) => [asc(b.sortOrder)] } },
+    }),
+    db.query.certifications.findMany({
+      where: eq(certifications.profileId, profile.id),
+    }),
+  ]);
+
+  const profileData = {
+    work_experience: new Map(expList.map((e) => [e.id, e])),
+    education: new Map(eduList.map((e) => [e.id, e])),
+    skill: new Map(skillList.map((s) => [s.id, s])),
+    project: new Map(projList.map((p) => [p.id, p])),
+    certification: new Map(certList.map((c) => [c.id, c])),
+  };
+
+  const headerOverrides = (snapshot.headerOverrides ?? {}) as Record<string, string>;
+  const header: ResolvedHeader = {
+    fullName: headerOverrides.fullName ?? user.fullName ?? "",
+    headline: headerOverrides.headline ?? profile.headline,
+    email: headerOverrides.email ?? profile.email,
+    phone: headerOverrides.phone ?? profile.phone,
+    location: headerOverrides.location ?? profile.location,
+    linkedinUrl: headerOverrides.linkedinUrl ?? profile.linkedinUrl,
+    githubUrl: headerOverrides.githubUrl ?? profile.githubUrl,
+    websiteUrl: headerOverrides.websiteUrl ?? profile.websiteUrl,
+  };
+
+  const summary = snapshot.summaryOverride ?? profile.summary;
+
+  const resolvedBlocks: ResolvedBlock[] = snapshot.blocks
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((block, blockIdx) => {
+      const blockType = block.blockType as BlockType;
+      const defaultHeading = DEFAULT_HEADINGS[blockType];
+
+      const sortedItems = [...block.items].sort((a, b) => a.sortOrder - b.sortOrder);
+
+      const resolvedItems: ResolvedBlockItem[] = sortedItems
+        .map((item, idx) => {
+          const overrides = (item.overrides ?? {}) as Record<string, unknown>;
+          const hasOverrides = Object.keys(overrides).length > 0;
+          const syntheticId = `snapshot-item-${blockIdx}-${idx}`;
+
+          if (item.sourceType === "custom") {
+            return {
+              id: syntheticId,
+              sourceId: item.sourceId,
+              sourceType: item.sourceType,
+              sortOrder: item.sortOrder,
+              isVisible: item.isVisible,
+              data: {
+                id: syntheticId,
+                text: (overrides.text as string) ?? "",
+                title: (overrides.title as string) ?? "",
+              },
+              hasOverrides,
+            } as ResolvedBlockItem;
+          }
+
+          const sourceMap = profileData[item.sourceType as keyof typeof profileData];
+          if (!sourceMap) return null;
+
+          const sourceData = sourceMap.get(item.sourceId);
+          if (!sourceData) return null;
+
+          const resolved = resolveItem(item.sourceType, sourceData, overrides);
+
+          return {
+            id: syntheticId,
+            sourceId: item.sourceId,
+            sourceType: item.sourceType,
+            sortOrder: item.sortOrder,
+            isVisible: item.isVisible,
+            data: resolved,
+            hasOverrides,
+          } as ResolvedBlockItem;
+        })
+        .filter((item): item is ResolvedBlockItem => item !== null);
+
+      return {
+        id: `snapshot-block-${blockIdx}`,
+        type: blockType,
+        heading: block.headingOverride ?? defaultHeading,
+        defaultHeading,
+        headingOverride: block.headingOverride,
+        sortOrder: block.sortOrder,
+        isVisible: block.isVisible,
+        config: (block.config ?? {}) as Record<string, unknown>,
+        items: resolvedItems,
+      };
+    });
+
+  return {
+    id: resumeId,
+    title: snapshot.title,
+    templateId: snapshot.templateId,
+    status: "draft",
+    targetJobTitle: null,
+    targetCompany: null,
+    header,
+    summary,
+    blocks: resolvedBlocks,
+    settings: (snapshot.settings ?? {}) as Record<string, unknown>,
+  };
+}
+
+/**
  * Loads a resume and resolves all blocks by merging profile data with overrides.
  * This is the core data transformation that the editor, preview, and export all use.
  */

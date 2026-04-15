@@ -876,6 +876,32 @@ export async function getResumeVersions(resumeId: string) {
 }
 
 /**
+ * Resolve a version snapshot against current profile data for preview.
+ */
+export async function getResolvedVersion(
+  resumeId: string,
+  versionId: string
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return null;
+
+  const version = await db.query.resumeVersions.findFirst({
+    where: and(
+      eq(resumeVersions.id, versionId),
+      eq(resumeVersions.resumeId, resumeId)
+    ),
+  });
+  if (!version) return null;
+
+  const { resolveSnapshot } = await import("@/lib/resume/resolve");
+  return resolveSnapshot(version.snapshot as ResumeSnapshot, user.id, resumeId);
+}
+
+/**
  * Restore a resume to a previous version.
  * Wipes current blocks/items and recreates from the snapshot.
  * Creates a new version snapshot of the current state before restoring (auto-save).

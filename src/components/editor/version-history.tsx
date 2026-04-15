@@ -22,8 +22,11 @@ import {
   getResumeVersions,
   restoreResumeVersion,
   deleteResumeVersion,
+  getResolvedVersion,
 } from "@/app/(dashboard)/resumes/actions";
+import { TemplateRenderer } from "@/templates/renderer";
 import type { ResumeVersion } from "@/db/schema";
+import type { ResolvedResume } from "@/lib/resume/types";
 
 type Props = {
   resumeId: string;
@@ -32,9 +35,9 @@ type Props = {
 
 export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   const [versions, setVersions] = useState<ResumeVersion[] | null>(null);
-  const [previewVersion, setPreviewVersion] = useState<ResumeVersion | null>(
-    null
-  );
+  const [previewVersion, setPreviewVersion] = useState<ResumeVersion | null>(null);
+  const [resolvedPreview, setResolvedPreview] = useState<ResolvedResume | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const loadVersions = useCallback(async () => {
@@ -45,6 +48,25 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   useEffect(() => {
     loadVersions();
   }, [loadVersions]);
+
+  // When a version is selected for preview, fetch the resolved version
+  useEffect(() => {
+    if (!previewVersion) {
+      setResolvedPreview(null);
+      return;
+    }
+    let cancelled = false;
+    setLoadingPreview(true);
+    getResolvedVersion(resumeId, previewVersion.id).then((r) => {
+      if (!cancelled) {
+        setResolvedPreview(r);
+        setLoadingPreview(false);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [previewVersion, resumeId]);
 
   const handleRestore = useCallback(
     (versionId: string, versionNumber: number) => {
@@ -135,21 +157,55 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
         ))}
       </div>
 
-      {/* Version preview dialog */}
+      {/* Version preview dialog - renders the actual resume */}
       <Dialog
         open={!!previewVersion}
         onOpenChange={(open) => !open && setPreviewVersion(null)}
       >
-        <DialogContent className="max-w-[900px] max-h-[90vh] overflow-y-auto sm:!max-w-[900px]">
+        <DialogContent className="sm:!max-w-[920px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-headline">
-              Version {previewVersion?.versionNumber}:{" "}
-              {previewVersion?.changeSummary}
+              Version {previewVersion?.versionNumber}
+              {previewVersion?.changeSummary && ` — ${previewVersion.changeSummary}`}
             </DialogTitle>
+            <div className="flex items-center gap-3 text-xs text-[var(--on-surface-variant)]">
+              <span>
+                {previewVersion?.createdBy === "ai_tailoring" ? "AI" : "You"}
+              </span>
+              <span>•</span>
+              <span>
+                {previewVersion &&
+                  new Date(previewVersion.createdAt).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}
+              </span>
+            </div>
           </DialogHeader>
-          {previewVersion && <VersionPreview version={previewVersion} />}
+
+          <div className="bg-[var(--surface-container-low)] rounded-lg p-6 -mx-1">
+            {loadingPreview && (
+              <div className="flex items-center justify-center py-24">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--on-surface-variant)]" />
+              </div>
+            )}
+            {!loadingPreview && resolvedPreview && (
+              <div className="bg-white rounded-md shadow-sm overflow-hidden">
+                <TemplateRenderer resume={resolvedPreview} />
+              </div>
+            )}
+            {!loadingPreview && !resolvedPreview && (
+              <p className="text-center text-sm text-[var(--on-surface-variant)] py-12">
+                Could not load version preview.
+              </p>
+            )}
+          </div>
+
           {previewVersion && (
-            <div className="mt-4 flex gap-2 border-t border-ghost pt-4">
+            <div className="flex gap-2 border-t border-ghost pt-4">
               <Button
                 onClick={() => {
                   handleRestore(previewVersion.id, previewVersion.versionNumber);
@@ -193,14 +249,12 @@ function VersionCard({
   return (
     <div className="rounded-lg bg-white p-4 shadow-ambient transition-all hover:shadow-md">
       <div className="flex items-start gap-4">
-        {/* Version number badge */}
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--surface-container)]">
           <span className="font-headline text-sm font-bold text-[var(--on-surface)]">
             v{version.versionNumber}
           </span>
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
@@ -230,7 +284,6 @@ function VersionCard({
             )}
           </div>
 
-          {/* Actions */}
           <div className="mt-3 flex items-center gap-1">
             <Button
               variant="ghost"
@@ -263,68 +316,6 @@ function VersionCard({
               Delete
             </Button>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VersionPreview({ version }: { version: ResumeVersion }) {
-  const snapshot = version.snapshot as {
-    title: string;
-    templateId: string;
-    blocks: Array<{
-      blockType: string;
-      headingOverride: string | null;
-      isVisible: boolean;
-      items: Array<unknown>;
-    }>;
-    summaryOverride: string | null;
-  };
-
-  return (
-    <div className="rounded-lg bg-[var(--surface-container-low)] p-6">
-      <div className="mb-4">
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--on-surface-variant)]">
-          Title
-        </p>
-        <p className="text-sm">{snapshot.title}</p>
-      </div>
-      <div className="mb-4">
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--on-surface-variant)]">
-          Template
-        </p>
-        <p className="text-sm">{snapshot.templateId}</p>
-      </div>
-      {snapshot.summaryOverride && (
-        <div className="mb-4">
-          <p className="text-xs font-medium uppercase tracking-wider text-[var(--on-surface-variant)]">
-            Summary
-          </p>
-          <p className="text-sm mt-1">{snapshot.summaryOverride}</p>
-        </div>
-      )}
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
-          Sections ({snapshot.blocks.filter((b) => b.isVisible).length} visible)
-        </p>
-        <div className="space-y-1">
-          {snapshot.blocks
-            .filter((b) => b.isVisible)
-            .map((b, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between rounded-md bg-white px-3 py-2 text-sm"
-              >
-                <span>
-                  {b.headingOverride ||
-                    b.blockType.charAt(0).toUpperCase() + b.blockType.slice(1)}
-                </span>
-                <span className="text-xs text-[var(--on-surface-variant)]">
-                  {b.items.length} item{b.items.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-            ))}
         </div>
       </div>
     </div>
