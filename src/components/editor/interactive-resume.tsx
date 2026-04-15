@@ -28,7 +28,6 @@ import type {
   ResolvedCertification,
   ResolvedCustomItem,
 } from "@/lib/resume/types";
-import { formatDateRange } from "@/templates/modern-clean/shared";
 import { getStyle, type TemplateStyle } from "@/templates/styles";
 import { Plus, Trash2 } from "lucide-react";
 
