@@ -4,15 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, Sparkles, Target, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Sparkles, Target, MessageCircle } from "lucide-react";
 import { BlockList } from "./block-list";
 import { TemplatePicker } from "./template-picker";
 import { ResumePreview } from "./resume-preview";
 import { AiReviewPanel } from "./ai-review-panel";
 import { JobTailorPanel } from "./job-tailor-panel";
+import { AiChatPanel } from "./ai-chat-panel";
 import type { ResolvedResume } from "@/lib/resume/types";
 
-type RightPanel = "none" | "ai-review" | "job-tailor";
+type RightPanel = "none" | "ai-review" | "job-tailor" | "ai-chat";
 
 type Props = {
   resume: ResolvedResume;
@@ -57,6 +58,17 @@ export function EditorShell({ resume }: Props) {
         </div>
         <div className="flex items-center gap-2">
           <Button
+            size="sm"
+            onClick={() => togglePanel("ai-chat")}
+            className={rightPanel === "ai-chat"
+              ? "magical-surface text-white gap-2"
+              : "magical-gradient text-white gap-2"
+            }
+          >
+            <MessageCircle className="h-4 w-4" />
+            AI Chat
+          </Button>
+          <Button
             variant={rightPanel === "job-tailor" ? "default" : "ghost"}
             size="sm"
             onClick={() => togglePanel("job-tailor")}
@@ -66,15 +78,13 @@ export function EditorShell({ resume }: Props) {
             Job Tailor
           </Button>
           <Button
+            variant={rightPanel === "ai-review" ? "default" : "ghost"}
             size="sm"
             onClick={() => togglePanel("ai-review")}
-            className={rightPanel === "ai-review"
-              ? "magical-surface text-white"
-              : "magical-gradient text-white"
-            }
+            className={rightPanel === "ai-review" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Magic AI
+            Review
           </Button>
           <a href={`/api/pdf/${resume.id}`} download>
             <Button size="sm" className="bg-[var(--on-surface)] text-white hover:bg-[var(--on-surface)]/90 gap-2">
@@ -110,6 +120,12 @@ export function EditorShell({ resume }: Props) {
         )}
         {rightPanel === "job-tailor" && (
           <JobTailorPanel
+            resumeId={resume.id}
+            onClose={() => setRightPanel("none")}
+          />
+        )}
+        {rightPanel === "ai-chat" && (
+          <AiChatPanel
             resumeId={resume.id}
             onClose={() => setRightPanel("none")}
           />
