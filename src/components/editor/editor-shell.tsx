@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, Sparkles, Target, MessageCircle, History } from "lucide-react";
+import { ArrowLeft, Download, Sparkles, Target, MessageCircle } from "lucide-react";
 import { BlockList } from "./block-list";
 import { TemplatePicker } from "./template-picker";
 import { ResumePreview } from "./resume-preview";
 import { AiReviewPanel } from "./ai-review-panel";
 import { JobTailorPanel } from "./job-tailor-panel";
 import { AiChatPanel } from "./ai-chat-panel";
+import { VersionHistory } from "./version-history";
+import { SaveVersionButton } from "./save-version-button";
 import { TemplateRenderer } from "@/templates/renderer";
 import type { ResolvedResume } from "@/lib/resume/types";
 
@@ -24,6 +27,7 @@ type Props = {
 export function EditorShell({ resume }: Props) {
   const [rightPanel, setRightPanel] = useState<RightPanel>("none");
   const [activeTab, setActiveTab] = useState<ViewTab>("editor");
+  const router = useRouter();
 
   const togglePanel = (panel: RightPanel) => {
     setRightPanel((prev) => (prev === panel ? "none" : panel));
@@ -64,6 +68,7 @@ export function EditorShell({ resume }: Props) {
         <div className="flex items-center gap-2">
           {showSidebars && (
             <>
+              <SaveVersionButton resumeId={resume.id} />
               <Button
                 size="sm"
                 onClick={() => togglePanel("ai-chat")}
@@ -159,17 +164,13 @@ export function EditorShell({ resume }: Props) {
 
         {activeTab === "history" && (
           <main className="flex-1 overflow-y-auto bg-[var(--surface-container)] p-12">
-            <div className="mx-auto max-w-[600px] text-center">
-              <div className="rounded-lg bg-white p-12 shadow-ambient">
-                <History className="mx-auto mb-4 h-12 w-12 text-[var(--on-surface-variant)] opacity-40" />
-                <h2 className="font-headline text-xl font-bold text-[var(--on-surface)]">
-                  Version History
-                </h2>
-                <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
-                  Coming soon. You&apos;ll be able to browse past versions of your resume, compare changes, and restore previous states.
-                </p>
-              </div>
-            </div>
+            <VersionHistory
+              resumeId={resume.id}
+              onRestoreComplete={() => {
+                setActiveTab("editor");
+                router.refresh();
+              }}
+            />
           </main>
         )}
       </div>

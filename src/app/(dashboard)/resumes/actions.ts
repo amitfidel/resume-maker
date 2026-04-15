@@ -5,6 +5,7 @@ import {
   resumes,
   resumeBlocks,
   resumeBlockItems,
+  resumeVersions,
   careerProfiles,
   workExperiences,
   experienceBullets,
@@ -749,6 +750,234 @@ export async function deleteBlock(resumeId: string, blockId: string) {
       and(
         eq(resumeBlocks.id, blockId),
         eq(resumeBlocks.resumeId, resumeId)
+      )
+    );
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+// ============================================================
+// Version history
+// ============================================================
+
+type ResumeSnapshot = {
+  title: string;
+  templateId: string;
+  headerOverrides: Record<string, string> | null;
+  summaryOverride: string | null;
+  settings: Record<string, unknown> | null;
+  blocks: Array<{
+    blockType: string;
+    headingOverride: string | null;
+    sortOrder: number;
+    isVisible: boolean;
+    config: Record<string, unknown> | null;
+    items: Array<{
+      sourceType: string;
+      sourceId: string;
+      sortOrder: number;
+      isVisible: boolean;
+      overrides: Record<string, unknown> | null;
+    }>;
+  }>;
+};
+
+async function buildSnapshot(resumeId: string): Promise<ResumeSnapshot> {
+  const resume = await db.query.resumes.findFirst({
+    where: eq(resumes.id, resumeId),
+    with: {
+      blocks: {
+        with: { items: true },
+        orderBy: (b, { asc }) => [asc(b.sortOrder)],
+      },
+    },
+  });
+  if (!resume) throw new Error("Resume not found");
+
+  return {
+    title: resume.title,
+    templateId: resume.templateId,
+    headerOverrides: resume.headerOverrides as Record<string, string> | null,
+    summaryOverride: resume.summaryOverride,
+    settings: resume.settings,
+    blocks: resume.blocks.map((b) => ({
+      blockType: b.blockType,
+      headingOverride: b.headingOverride,
+      sortOrder: b.sortOrder,
+      isVisible: b.isVisible,
+      config: b.config,
+      items: b.items
+        .sort((a, z) => a.sortOrder - z.sortOrder)
+        .map((i) => ({
+          sourceType: i.sourceType,
+          sourceId: i.sourceId,
+          sortOrder: i.sortOrder,
+          isVisible: i.isVisible,
+          overrides: i.overrides,
+        })),
+    })),
+  };
+}
+
+/**
+ * Save a named version (snapshot) of the current resume state.
+ */
+export async function saveResumeVersion(
+  resumeId: string,
+  changeSummary: string,
+  createdBy: "user" | "ai_tailoring" = "user"
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return { error: "Resume not found" };
+
+  const snapshot = await buildSnapshot(resumeId);
+
+  // Get next version number
+  const [{ maxVersion }] = await db
+    .select({ maxVersion: max(resumeVersions.versionNumber) })
+    .from(resumeVersions)
+    .where(eq(resumeVersions.resumeId, resumeId));
+
+  await db.insert(resumeVersions).values({
+    resumeId,
+    versionNumber: (maxVersion ?? 0) + 1,
+    snapshot,
+    changeSummary,
+    createdBy,
+  });
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+  return { success: true };
+}
+
+/**
+ * Get all versions for a resume (metadata only, snapshot kept on server).
+ */
+export async function getResumeVersions(resumeId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return [];
+
+  return db.query.resumeVersions.findMany({
+    where: eq(resumeVersions.resumeId, resumeId),
+    orderBy: (v, { desc }) => [desc(v.versionNumber)],
+  });
+}
+
+/**
+ * Restore a resume to a previous version.
+ * Wipes current blocks/items and recreates from the snapshot.
+ * Creates a new version snapshot of the current state before restoring (auto-save).
+ */
+export async function restoreResumeVersion(
+  resumeId: string,
+  versionId: string
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return { error: "Resume not found" };
+
+  const version = await db.query.resumeVersions.findFirst({
+    where: and(
+      eq(resumeVersions.id, versionId),
+      eq(resumeVersions.resumeId, resumeId)
+    ),
+  });
+  if (!version) return { error: "Version not found" };
+
+  // Auto-save current state before restoring
+  const currentSnapshot = await buildSnapshot(resumeId);
+  const [{ maxVersion }] = await db
+    .select({ maxVersion: max(resumeVersions.versionNumber) })
+    .from(resumeVersions)
+    .where(eq(resumeVersions.resumeId, resumeId));
+
+  await db.insert(resumeVersions).values({
+    resumeId,
+    versionNumber: (maxVersion ?? 0) + 1,
+    snapshot: currentSnapshot,
+    changeSummary: `Auto-saved before restoring v${version.versionNumber}`,
+    createdBy: "user",
+  });
+
+  // Apply the restored snapshot
+  const snapshot = version.snapshot as ResumeSnapshot;
+
+  // Update resume metadata
+  await db
+    .update(resumes)
+    .set({
+      title: snapshot.title,
+      templateId: snapshot.templateId,
+      headerOverrides: snapshot.headerOverrides,
+      summaryOverride: snapshot.summaryOverride,
+      settings: snapshot.settings,
+      updatedAt: new Date(),
+    })
+    .where(eq(resumes.id, resumeId));
+
+  // Delete all existing blocks (cascades to items)
+  await db.delete(resumeBlocks).where(eq(resumeBlocks.resumeId, resumeId));
+
+  // Recreate blocks and items
+  for (const b of snapshot.blocks) {
+    const [newBlock] = await db
+      .insert(resumeBlocks)
+      .values({
+        resumeId,
+        blockType: b.blockType,
+        headingOverride: b.headingOverride,
+        sortOrder: b.sortOrder,
+        isVisible: b.isVisible,
+        config: b.config,
+      })
+      .returning();
+
+    if (b.items.length > 0) {
+      await db.insert(resumeBlockItems).values(
+        b.items.map((i) => ({
+          blockId: newBlock.id,
+          sourceType: i.sourceType,
+          sourceId: i.sourceId,
+          sortOrder: i.sortOrder,
+          isVisible: i.isVisible,
+          overrides: i.overrides,
+        }))
+      );
+    }
+  }
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+  return { success: true };
+}
+
+/**
+ * Delete a version from history.
+ */
+export async function deleteResumeVersion(resumeId: string, versionId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  await db
+    .delete(resumeVersions)
+    .where(
+      and(
+        eq(resumeVersions.id, versionId),
+        eq(resumeVersions.resumeId, resumeId)
       )
     );
 
