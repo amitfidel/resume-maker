@@ -2,12 +2,18 @@
 
 import { useCallback } from "react";
 import { EditableText } from "./editable-text";
+import { EditableDateRange } from "./editable-date-range";
 import {
   updateSummary,
   updateBlockHeading,
   updateItemField,
   updateBulletText,
 } from "@/app/(dashboard)/resumes/actions";
+import {
+  updateWorkExperienceDates,
+  updateEducationDates,
+  updateProjectDates,
+} from "@/app/(dashboard)/profile/actions";
 import type {
   ResolvedResume,
   ResolvedBlock,
@@ -18,7 +24,6 @@ import type {
   ResolvedProject,
   ResolvedCertification,
 } from "@/lib/resume/types";
-import { formatDateRange } from "@/templates/modern-clean/shared";
 
 type Props = {
   resume: ResolvedResume;
@@ -191,6 +196,13 @@ function ExperienceCard({
   const visibleBullets = exp.bullets.filter((b) => b.visible);
   const setField = useFieldUpdater(resumeId, item.id);
 
+  const handleDatesChange = useCallback(
+    (startDate: string | null, endDate: string | null, isCurrent: boolean) => {
+      updateWorkExperienceDates(exp.id, startDate, endDate, isCurrent);
+    },
+    [exp.id]
+  );
+
   return (
     <div>
       <div className="flex items-baseline justify-between gap-2">
@@ -214,9 +226,14 @@ function ExperienceCard({
             placeholder="Location"
           />
         </div>
-        <span className="shrink-0 text-xs text-gray-500">
-          {formatDateRange(exp.startDate, exp.endDate, exp.isCurrent)}
-        </span>
+        <EditableDateRange
+          startDate={exp.startDate}
+          endDate={exp.endDate}
+          isCurrent={exp.isCurrent}
+          showIsCurrent
+          onSave={handleDatesChange}
+          className="shrink-0 text-xs text-gray-500"
+        />
       </div>
       {visibleBullets.length > 0 && (
         <ul className="mt-1 list-inside list-disc space-y-0.5 text-sm text-gray-700">
@@ -290,6 +307,13 @@ function EducationCard({
   const edu = item.data as ResolvedEducation;
   const setField = useFieldUpdater(resumeId, item.id);
 
+  const handleDatesChange = useCallback(
+    (startDate: string | null, endDate: string | null) => {
+      updateEducationDates(edu.id, startDate, endDate);
+    },
+    [edu.id]
+  );
+
   return (
     <div className="flex items-baseline justify-between gap-2">
       <div className="flex-1 min-w-0">
@@ -298,17 +322,13 @@ function EducationCard({
           onSave={setField("degree")}
           className="font-semibold text-gray-900"
         />
-        {(edu.fieldOfStudy || true) && (
-          <>
-            <span className="text-gray-900"> in </span>
-            <EditableText
-              value={edu.fieldOfStudy || ""}
-              onSave={setField("fieldOfStudy")}
-              className="font-semibold text-gray-900"
-              placeholder="Field of Study"
-            />
-          </>
-        )}
+        <span className="text-gray-900"> in </span>
+        <EditableText
+          value={edu.fieldOfStudy || ""}
+          onSave={setField("fieldOfStudy")}
+          className="font-semibold text-gray-900"
+          placeholder="Field of Study"
+        />
         <span className="text-gray-600"> | </span>
         <EditableText
           value={edu.institution}
@@ -323,9 +343,12 @@ function EducationCard({
           placeholder="—"
         />
       </div>
-      <span className="shrink-0 text-xs text-gray-500">
-        {formatDateRange(edu.startDate, edu.endDate)}
-      </span>
+      <EditableDateRange
+        startDate={edu.startDate}
+        endDate={edu.endDate}
+        onSave={handleDatesChange}
+        className="shrink-0 text-xs text-gray-500"
+      />
     </div>
   );
 }

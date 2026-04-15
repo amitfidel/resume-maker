@@ -33,6 +33,7 @@ export function EditableText({
   const ref = useRef<HTMLElement>(null);
 
   const hasOverride = originalValue !== undefined && value !== originalValue;
+  const isEmpty = !text;
 
   useEffect(() => {
     setText(value);
@@ -44,6 +45,10 @@ export function EditableText({
     requestAnimationFrame(() => {
       if (ref.current) {
         ref.current.focus();
+        // Clear placeholder text if the span shows a placeholder
+        if (!text && ref.current.textContent) {
+          ref.current.textContent = "";
+        }
         const range = document.createRange();
         const sel = window.getSelection();
         range.selectNodeContents(ref.current);
@@ -52,7 +57,7 @@ export function EditableText({
         sel?.addRange(range);
       }
     });
-  }, [showAi]);
+  }, [showAi, text]);
 
   const save = useCallback(() => {
     if (showAi) return;
@@ -98,6 +103,12 @@ export function EditableText({
     [onSave]
   );
 
+  // Determine what to render inside the editable span
+  // - When editing: render the current text (empty string is fine - we'll use min-width)
+  // - When not editing and empty: render placeholder
+  // - When not editing with value: render value
+  const renderedContent = editing ? text : (text || placeholder);
+
   return (
     <span className="group/editable relative inline">
       <Tag
@@ -109,14 +120,16 @@ export function EditableText({
         onKeyDown={handleKeyDown}
         className={cn(
           "outline-none transition-colors",
-          !editing && !showAi && "cursor-pointer hover:bg-blue-50 rounded-sm",
+          // Ensure clickable area even when empty
+          "inline-block min-w-[1.5ch]",
+          !editing && !showAi && "cursor-text hover:bg-blue-50 rounded-sm",
           editing && "bg-blue-50 ring-1 ring-blue-300 rounded-sm px-0.5",
           hasOverride && !editing && "border-b border-dashed border-amber-400",
-          !text && "text-gray-300 italic",
+          isEmpty && !editing && "text-gray-300 italic",
           className
         )}
       >
-        {text || (editing ? "" : placeholder)}
+        {renderedContent}
       </Tag>
 
       {/* Action buttons on hover */}

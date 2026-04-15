@@ -16,6 +16,90 @@ import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 
 // ============================================================
+// Date updates (work with profile source - used from editor)
+// ============================================================
+
+export async function updateWorkExperienceDates(
+  expId: string,
+  startDate: string | null,
+  endDate: string | null,
+  isCurrent: boolean
+) {
+  const user = await requireUser();
+  const profile = await db.query.careerProfiles.findFirst({
+    where: eq(careerProfiles.userId, user.id),
+  });
+  if (!profile) return;
+
+  await db
+    .update(workExperiences)
+    .set({
+      startDate: startDate || "2020-01-01",
+      endDate: endDate || null,
+      isCurrent,
+      updatedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(workExperiences.id, expId),
+        eq(workExperiences.profileId, profile.id)
+      )
+    );
+
+  revalidatePath("/profile");
+  // Revalidate all resume editor pages - we don't know which one, so use the layout
+  revalidatePath("/resumes", "layout");
+}
+
+export async function updateEducationDates(
+  eduId: string,
+  startDate: string | null,
+  endDate: string | null
+) {
+  const user = await requireUser();
+  const profile = await db.query.careerProfiles.findFirst({
+    where: eq(careerProfiles.userId, user.id),
+  });
+  if (!profile) return;
+
+  await db
+    .update(education)
+    .set({
+      startDate: startDate || null,
+      endDate: endDate || null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(education.id, eduId), eq(education.profileId, profile.id)));
+
+  revalidatePath("/profile");
+  revalidatePath("/resumes", "layout");
+}
+
+export async function updateProjectDates(
+  projId: string,
+  startDate: string | null,
+  endDate: string | null
+) {
+  const user = await requireUser();
+  const profile = await db.query.careerProfiles.findFirst({
+    where: eq(careerProfiles.userId, user.id),
+  });
+  if (!profile) return;
+
+  await db
+    .update(projects)
+    .set({
+      startDate: startDate || null,
+      endDate: endDate || null,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(projects.id, projId), eq(projects.profileId, profile.id)));
+
+  revalidatePath("/profile");
+  revalidatePath("/resumes", "layout");
+}
+
+// ============================================================
 // Career Profile
 // ============================================================
 
