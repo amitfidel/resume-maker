@@ -4,16 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Download, Sparkles, Target, MessageCircle } from "lucide-react";
+import { ArrowLeft, Download, Sparkles, Target, MessageCircle, History } from "lucide-react";
 import { BlockList } from "./block-list";
 import { TemplatePicker } from "./template-picker";
 import { ResumePreview } from "./resume-preview";
 import { AiReviewPanel } from "./ai-review-panel";
 import { JobTailorPanel } from "./job-tailor-panel";
 import { AiChatPanel } from "./ai-chat-panel";
+import { TemplateRenderer } from "@/templates/renderer";
 import type { ResolvedResume } from "@/lib/resume/types";
 
 type RightPanel = "none" | "ai-review" | "job-tailor" | "ai-chat";
+type ViewTab = "editor" | "preview" | "history";
 
 type Props = {
   resume: ResolvedResume;
@@ -21,11 +23,14 @@ type Props = {
 
 export function EditorShell({ resume }: Props) {
   const [rightPanel, setRightPanel] = useState<RightPanel>("none");
-  const [activeTab, setActiveTab] = useState<"editor" | "preview" | "history">("editor");
+  const [activeTab, setActiveTab] = useState<ViewTab>("editor");
 
   const togglePanel = (panel: RightPanel) => {
     setRightPanel((prev) => (prev === panel ? "none" : panel));
   };
+
+  // Hide side panels and sidebars when in preview or history mode
+  const showSidebars = activeTab === "editor";
 
   return (
     <div className="flex h-[calc(100vh-0px)] flex-col bg-[var(--surface)]">
@@ -38,16 +43,16 @@ export function EditorShell({ resume }: Props) {
             </Button>
           </Link>
           <h1 className="font-headline text-base font-bold text-[var(--on-surface)]">
-            Architect Editor
+            {resume.title}
           </h1>
-          <div className="flex items-center gap-1 ml-2">
+          <div className="flex items-center gap-1 ml-2 rounded-lg bg-[var(--surface-container-low)] p-0.5">
             {(["editor", "preview", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors capitalize ${
+                className={`px-3 py-1 text-xs font-medium rounded-md transition-all capitalize ${
                   activeTab === tab
-                    ? "text-[var(--on-surface)] bg-[var(--surface-container)]"
+                    ? "bg-white text-[var(--on-surface)] shadow-sm"
                     : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
                 }`}
               >
@@ -57,35 +62,39 @@ export function EditorShell({ resume }: Props) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={() => togglePanel("ai-chat")}
-            className={rightPanel === "ai-chat"
-              ? "magical-surface text-white gap-2"
-              : "magical-gradient text-white gap-2"
-            }
-          >
-            <MessageCircle className="h-4 w-4" />
-            AI Chat
-          </Button>
-          <Button
-            variant={rightPanel === "job-tailor" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => togglePanel("job-tailor")}
-            className={rightPanel === "job-tailor" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
-          >
-            <Target className="mr-2 h-4 w-4" />
-            Job Tailor
-          </Button>
-          <Button
-            variant={rightPanel === "ai-review" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => togglePanel("ai-review")}
-            className={rightPanel === "ai-review" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
-          >
-            <Sparkles className="mr-2 h-4 w-4" />
-            Review
-          </Button>
+          {showSidebars && (
+            <>
+              <Button
+                size="sm"
+                onClick={() => togglePanel("ai-chat")}
+                className={rightPanel === "ai-chat"
+                  ? "magical-surface text-white gap-2"
+                  : "magical-gradient text-white gap-2"
+                }
+              >
+                <MessageCircle className="h-4 w-4" />
+                AI Chat
+              </Button>
+              <Button
+                variant={rightPanel === "job-tailor" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => togglePanel("job-tailor")}
+                className={rightPanel === "job-tailor" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
+              >
+                <Target className="mr-2 h-4 w-4" />
+                Job Tailor
+              </Button>
+              <Button
+                variant={rightPanel === "ai-review" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => togglePanel("ai-review")}
+                className={rightPanel === "ai-review" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                Review
+              </Button>
+            </>
+          )}
           <a href={`/api/pdf/${resume.id}`} download>
             <Button size="sm" className="bg-[var(--on-surface)] text-white hover:bg-[var(--on-surface)]/90 gap-2">
               Export
@@ -95,40 +104,73 @@ export function EditorShell({ resume }: Props) {
         </div>
       </div>
 
-      {/* Editor body */}
+      {/* Editor body - changes based on active tab */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar - sections + template */}
-        <aside className="w-64 shrink-0 overflow-y-auto bg-[var(--surface-container-lowest)] p-5 space-y-6">
-          <BlockList resumeId={resume.id} blocks={resume.blocks} />
-          <Separator className="bg-[var(--surface-container-high)]" />
-          <TemplatePicker resumeId={resume.id} currentTemplateId={resume.templateId} />
-        </aside>
+        {activeTab === "editor" && (
+          <>
+            {/* Left sidebar - sections + template */}
+            <aside className="w-64 shrink-0 overflow-y-auto bg-[var(--surface-container-lowest)] p-5 space-y-6">
+              <BlockList resumeId={resume.id} blocks={resume.blocks} />
+              <Separator className="bg-[var(--surface-container-high)]" />
+              <TemplatePicker resumeId={resume.id} currentTemplateId={resume.templateId} />
+            </aside>
 
-        {/* Center - resume canvas on tonal background */}
-        <main className="flex-1 overflow-y-auto bg-[var(--surface-container)] p-8">
-          <div className="mx-auto max-w-[820px]">
-            <ResumePreview resume={resume} />
-          </div>
-        </main>
+            {/* Center - interactive resume canvas */}
+            <main className="flex-1 overflow-y-auto bg-[var(--surface-container)] p-8">
+              <div className="mx-auto max-w-[820px]">
+                <ResumePreview resume={resume} />
+              </div>
+            </main>
 
-        {/* Right panels */}
-        {rightPanel === "ai-review" && (
-          <AiReviewPanel
-            resumeId={resume.id}
-            onClose={() => setRightPanel("none")}
-          />
+            {/* Right panels */}
+            {rightPanel === "ai-review" && (
+              <AiReviewPanel
+                resumeId={resume.id}
+                onClose={() => setRightPanel("none")}
+              />
+            )}
+            {rightPanel === "job-tailor" && (
+              <JobTailorPanel
+                resumeId={resume.id}
+                onClose={() => setRightPanel("none")}
+              />
+            )}
+            {rightPanel === "ai-chat" && (
+              <AiChatPanel
+                resumeId={resume.id}
+                onClose={() => setRightPanel("none")}
+              />
+            )}
+          </>
         )}
-        {rightPanel === "job-tailor" && (
-          <JobTailorPanel
-            resumeId={resume.id}
-            onClose={() => setRightPanel("none")}
-          />
+
+        {activeTab === "preview" && (
+          <main className="flex-1 overflow-y-auto bg-[var(--surface-container)] p-12">
+            <div className="mx-auto max-w-[820px]">
+              <div className="rounded-lg bg-white shadow-ambient overflow-hidden">
+                <TemplateRenderer resume={resume} />
+              </div>
+              <p className="mt-6 text-center text-xs text-[var(--on-surface-variant)]">
+                This is how your resume will look when exported. No edit handles, no hover states — just the final document.
+              </p>
+            </div>
+          </main>
         )}
-        {rightPanel === "ai-chat" && (
-          <AiChatPanel
-            resumeId={resume.id}
-            onClose={() => setRightPanel("none")}
-          />
+
+        {activeTab === "history" && (
+          <main className="flex-1 overflow-y-auto bg-[var(--surface-container)] p-12">
+            <div className="mx-auto max-w-[600px] text-center">
+              <div className="rounded-lg bg-white p-12 shadow-ambient">
+                <History className="mx-auto mb-4 h-12 w-12 text-[var(--on-surface-variant)] opacity-40" />
+                <h2 className="font-headline text-xl font-bold text-[var(--on-surface)]">
+                  Version History
+                </h2>
+                <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
+                  Coming soon. You&apos;ll be able to browse past versions of your resume, compare changes, and restore previous states.
+                </p>
+              </div>
+            </div>
+          </main>
         )}
       </div>
     </div>
