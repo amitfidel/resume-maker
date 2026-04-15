@@ -15,6 +15,7 @@ type Props = {
   placeholder?: string;
   multiline?: boolean;
   aiEnabled?: boolean;
+  style?: React.CSSProperties;
 };
 
 export function EditableText({
@@ -26,6 +27,7 @@ export function EditableText({
   placeholder = "Click to edit...",
   multiline = false,
   aiEnabled = false,
+  style,
 }: Props) {
   const [editing, setEditing] = useState(false);
   const [showAi, setShowAi] = useState(false);
@@ -118,6 +120,7 @@ export function EditableText({
         onClick={startEditing}
         onBlur={save}
         onKeyDown={handleKeyDown}
+        style={style}
         className={cn(
           "outline-none transition-colors",
           // Ensure clickable area even when empty

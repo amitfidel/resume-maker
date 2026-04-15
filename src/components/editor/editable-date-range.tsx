@@ -12,6 +12,7 @@ type Props = {
   showIsCurrent?: boolean;
   onSave: (startDate: string | null, endDate: string | null, isCurrent: boolean) => void;
   className?: string;
+  style?: React.CSSProperties;
 };
 
 export function EditableDateRange({
@@ -21,6 +22,7 @@ export function EditableDateRange({
   showIsCurrent = false,
   onSave,
   className,
+  style,
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLSpanElement>(null);
@@ -32,6 +34,7 @@ export function EditableDateRange({
       <span
         ref={triggerRef}
         onClick={() => setIsOpen(true)}
+        style={style}
         className={cn(
           "cursor-pointer rounded-sm px-1 transition-colors hover:bg-blue-50",
           (!startDate && !endDate) && "text-gray-300 italic",
