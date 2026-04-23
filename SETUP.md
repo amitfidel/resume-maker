@@ -19,7 +19,7 @@ You are helping a non-developer friend set up a Next.js project on her personal 
 - **What it is**: "Resumi" — an AI-powered resume workspace. Block-based editor with live preview, AI writing assistance, job tailoring, and resume version tracking.
 - **Repo**: https://github.com/amitfidel/resume-maker.git
 - **Branch to use**: `claude/stoic-babbage-fc479a` (the main working branch — not `main`)
-- **Tech stack**: Next.js 16 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · shadcn/ui · Drizzle ORM · PostgreSQL · Supabase (running locally via Docker) · Google Gemini API for AI features
+- **Tech stack**: Next.js 16 (App Router, Turbopack) · React 19 · Tailwind CSS v4 · shadcn/ui · Drizzle ORM · PostgreSQL · Supabase (running locally via Docker) · Groq API (llama-3.3-70b-versatile) for AI features
 - **Architecture gist**: A career-profile database is the "source of truth". Each resume draws from the profile and stores sparse overrides. Auth and DB both run locally via the Supabase CLI's Docker stack — no cloud service required.
 
 ### What's already in the repo she'll clone
@@ -31,7 +31,7 @@ You are helping a non-developer friend set up a Next.js project on her personal 
 ### What's NOT in the repo (she needs to create/obtain)
 
 - `.env.local` file with secrets — template below
-- Her own Google Gemini API key (free tier works)
+- Her own Groq API key (free tier works — fast inference)
 
 ### Her system requirements
 
@@ -126,7 +126,7 @@ Then open it in any text editor (Notepad, VS Code, whatever she has). Paste this
 NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:55321
 NEXT_PUBLIC_SUPABASE_ANON_KEY=PASTE_THE_ANON_KEY_FROM_STEP_3_HERE
 DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:55322/postgres
-GOOGLE_GENERATIVE_AI_API_KEY=SHE_NEEDS_HER_OWN_KEY
+GROQ_API_KEY=SHE_NEEDS_HER_OWN_KEY
 ```
 
 The Supabase anon key: paste the long JWT from step 3's output. If she can't find it, she can re-print it any time with:
@@ -135,13 +135,15 @@ npx supabase status -o env
 ```
 and look for the `ANON_KEY=` line.
 
-**Gemini API key**: she needs her own. It's free. Walk her through:
-1. Go to https://aistudio.google.com/apikey
-2. Sign in with any Google account
-3. Click "Create API key"
-4. Copy the generated key, paste it into `.env.local` replacing `SHE_NEEDS_HER_OWN_KEY`
+**Groq API key**: she needs her own. It's free. Walk her through:
+1. Go to https://console.groq.com/keys
+2. Sign in (any email or Google account)
+3. Click "Create API Key", give it a name like "resumi-local"
+4. Copy the generated key (starts with `gsk_...`), paste it into `.env.local` replacing `SHE_NEEDS_HER_OWN_KEY`
 
 If she skips this, the app still runs — just AI chat, AI review, AI tailoring, and AI rewrite features won't work. She can add the key later.
+
+**Security note**: Groq keys let anyone spend against her account. She should never paste the key into chat messages, screenshots, or anywhere it could be logged. If she does by accident, revoke it at the same URL and generate a fresh one.
 
 Save and close the file.
 
@@ -163,7 +165,7 @@ Walk her through this checklist:
 3. She lands in the dashboard — **works**
 4. Click "New resume" — creates a resume, opens the editor — **works**
 5. On the left, type in any field — right-side preview updates as she types — **works**
-6. (Optional, only if Gemini key is set) Click "AI Chat" in the toolbar and say "hi" — gets a response — **AI works**
+6. (Optional, only if Groq key is set) Click "AI Chat" in the toolbar and say "hi" — gets a response — **AI works**
 
 Open Supabase Studio at http://127.0.0.1:55323 to browse the database if curious. No login.
 
@@ -204,8 +206,8 @@ If she runs into issues, ask her what the exact error message is, then:
 - **Sign up succeeds but dashboard crashes with "invalid token" or similar**
   The anon key in `.env.local` doesn't match what the local Supabase generated. Run `npx supabase status -o env` and copy the `ANON_KEY=` value again carefully (it's very long — make sure there's no line break in the middle when she pastes).
 
-- **"GOOGLE_GENERATIVE_AI_API_KEY is required" when using AI features**
-  She didn't set the Gemini key. Follow step 5's Gemini sub-steps.
+- **"GROQ_API_KEY is required" or "API key not valid" when using AI features**
+  She didn't set the Groq key, or she pasted it with whitespace/line breaks. Follow step 5's Groq sub-steps. Verify the value in `.env.local` starts with `gsk_` and has no leading/trailing spaces.
 
 - **On Windows: weird path errors or "is not recognized as the name of a cmdlet"**
   She's probably in CMD instead of PowerShell. Ask her to use PowerShell or Git Bash.
@@ -242,7 +244,7 @@ npm run sb:start                        # pulls ~2GB first time
 npm run db:push
 
 # Create .env.local — see template in "Step 5" above
-# Get Gemini key at https://aistudio.google.com/apikey
+# Get Groq key at https://console.groq.com/keys
 
 npm run dev                             # http://localhost:3001
 ```

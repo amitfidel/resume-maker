@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
 import { buildResumeReviewPrompt } from "@/lib/ai/prompts/resume-review";
 import { resolveResume } from "@/lib/resume/resolve";
 import { createClient } from "@/lib/supabase/server";
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const { system, prompt } = buildResumeReviewPrompt(resolved);
 
   const { text: result } = await generateText({
-    model: google("gemini-2.0-flash"),
+    model: groq("llama-3.3-70b-versatile"),
     system,
     prompt,
   });

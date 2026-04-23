@@ -1,5 +1,5 @@
 import { generateText } from "ai";
-import { google } from "@ai-sdk/google";
+import { groq } from "@ai-sdk/groq";
 import { buildParseResumePrompt } from "@/lib/ai/prompts/parse-resume";
 import { createClient } from "@/lib/supabase/server";
 
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     const { system, prompt } = buildParseResumePrompt(resumeText);
 
     const { text: result } = await generateText({
-      model: google("gemini-2.0-flash"),
+      model: groq("llama-3.3-70b-versatile"),
       system,
       prompt,
     });
