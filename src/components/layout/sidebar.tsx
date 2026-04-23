@@ -29,17 +29,21 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-full w-60 flex-col bg-[#182034] text-[#bec6e0]">
+    <aside className="flex h-full w-60 flex-col bg-[var(--ink)] text-[#bec6e0]">
       {/* Brand */}
       <div className="px-5 pt-6 pb-2">
-        <Link href="/dashboard" className="block">
-          <h1 className="font-headline text-lg font-bold text-white">
-            The Architect
+        <Link href="/dashboard" className="inline-flex items-baseline gap-0.5">
+          <h1 className="font-headline text-[22px] tracking-[-0.02em] text-white">
+            Resumi
           </h1>
-          <p className="text-[0.65rem] uppercase tracking-[0.15em] text-[#74777f]">
-            Premium Plan
-          </p>
+          <span
+            className="ml-1 inline-block h-1.5 w-1.5 self-center rounded-full bg-[var(--magic-2)]"
+            style={{ boxShadow: "0 0 10px var(--magic-2)" }}
+          />
         </Link>
+        <p className="mt-1 text-[0.65rem] uppercase tracking-[0.16em] text-[#74777f]">
+          Your career, composed
+        </p>
       </div>
 
       {/* Create button */}

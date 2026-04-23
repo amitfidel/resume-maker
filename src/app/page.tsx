@@ -1,174 +1,312 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PaperPreview } from "@/components/landing/paper-preview";
+import { MagneticButton } from "@/components/ui/magnetic-button";
 import {
   FileText,
   Sparkles,
   Target,
   BarChart3,
   ArrowRight,
+  Wand2,
+  ArrowUpRight,
 } from "lucide-react";
 
-const FEATURES = [
+// Four combined steps — each card pairs a workflow move with what Resumi
+// actually does for you. Replaces the old separate "features" + "workflow"
+// sections with one clear value prop.
+const STEPS = [
   {
+    n: "01",
     icon: FileText,
-    title: "Curated Drafts",
+    title: "Start from your profile",
+    italic: "profile",
     description:
-      "A block-based editor that treats your resume like a design canvas. Drag sections, edit inline, and see your changes rendered in real time on a pixel-perfect template.",
+      "Your career profile is the source of truth. Build it once on a canvas that feels like a design tool — drag sections, edit inline, watch the resume compose itself.",
+    magical: false,
   },
   {
+    n: "02",
     icon: Sparkles,
-    title: "AI Assistance",
+    title: "Compose with AI",
+    italic: "AI",
     description:
-      "Contextual writing help that lives inside your document. Improve bullet points, strengthen summaries, and add impact metrics with a single click.",
+      "Contextual writing lives inside your document. Improve bullets, strengthen summaries, add metrics — one click, no context switch.",
+    magical: true,
   },
   {
+    n: "03",
     icon: Target,
-    title: "Job Tailoring",
+    title: "Tailor to the job",
+    italic: "Tailor",
     description:
-      "Paste a job description and get an instant match score, keyword gap analysis, and AI-generated rewrite suggestions tailored to the role.",
+      "Paste a job description and get an instant match score, keyword gaps, and rewrite suggestions. Resumi re-weights your resume to match the role.",
+    magical: true,
   },
   {
+    n: "04",
     icon: BarChart3,
-    title: "Job Tracking",
+    title: "Track what works",
+    italic: "works",
     description:
-      "Link resume versions to applications. Track your pipeline from saved to offered. See which versions of your resume get the best results.",
+      "Link resume versions to applications. Watch your pipeline from saved to offered. Double down on the versions that land interviews.",
+    magical: false,
   },
 ];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col bg-[var(--surface)]">
+    <div className="relative min-h-screen overflow-x-hidden">
       {/* Nav */}
-      <header className="sticky top-0 z-50 glass-effect border-b border-ghost">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-          <span className="font-headline text-lg font-bold text-[var(--on-surface)]">
-            The Architect
+      <header className="glass-effect sticky top-0 z-50 flex items-center justify-between px-10 py-5 transition-colors">
+        <Link href="/" className="inline-flex items-baseline gap-0.5">
+          <span className="font-headline text-2xl tracking-[-0.02em] text-[var(--on-surface)]">
+            Resumi
           </span>
-          <nav className="hidden items-center gap-8 text-sm text-[var(--on-surface-variant)] md:flex">
-            <a href="#features" className="hover:text-[var(--on-surface)] transition-colors">Features</a>
-            <a href="#workflow" className="hover:text-[var(--on-surface)] transition-colors">Workflow</a>
-            <a href="#pricing" className="hover:text-[var(--on-surface)] transition-colors">Pricing</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm" className="text-[var(--on-surface-variant)]">
-                Sign in
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button size="sm" className="magical-gradient text-white">
-                Get Started
-              </Button>
-            </Link>
-          </div>
+          <span className="ml-1 inline-block h-1.5 w-1.5 self-center rounded-full bg-[var(--magic-2)]" />
+        </Link>
+        <nav className="hidden items-center gap-8 text-sm text-[var(--on-surface-soft)] md:flex">
+          <a href="#how" className="relative py-1 transition-colors hover:text-[var(--on-surface)]">
+            How it works
+          </a>
+          <a href="#pricing" className="relative py-1 transition-colors hover:text-[var(--on-surface)]">
+            Pricing
+          </a>
+        </nav>
+        <div className="flex items-center gap-2">
+          <Link href="/login">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="rounded-full text-[var(--on-surface-soft)]"
+            >
+              Sign in
+            </Button>
+          </Link>
+          <Link href="/signup">
+            <Button
+              size="sm"
+              className="magic-shine rounded-full bg-[var(--ink)] px-4 text-[var(--cream)] hover:-translate-y-px hover:bg-[var(--ink)]"
+            >
+              Get started
+              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </Link>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="px-6 pt-28 pb-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="max-w-3xl">
-            <h1 className="font-headline text-[3.5rem] font-extrabold leading-[1.08] tracking-tight text-[var(--on-surface)]">
-              Build a resume
-              <br />
-              that works as hard
-              <br />
-              as you do.
-            </h1>
-            <p className="mt-6 max-w-lg text-lg leading-relaxed text-[var(--on-surface-variant)]">
-              The full-cycle professional workspace. From structured profile
-              to polished document, powered by AI that understands career
-              narratives.
-            </p>
-            <div className="mt-10 flex items-center gap-4">
-              <Link href="/signup">
-                <Button size="lg" className="magical-gradient text-white h-12 px-8 text-base gap-2">
-                  Start Your Professional Journey
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
+      <section className="relative mx-auto max-w-[1240px] px-10 pb-10 pt-20">
+        <span className="mb-7 inline-flex items-center gap-2 rounded-full bg-[var(--surface-raised)] px-3.5 py-1.5 text-[12px] tracking-[0.04em] text-[var(--on-surface-soft)] shadow-[inset_0_0_0_1px_var(--border-ghost),var(--sh-1)]">
+            <span className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
+            Now with live AI rewrite
+          </span>
+
+        <h1 className="font-headline max-w-[1000px] text-[clamp(56px,8vw,112px)] font-normal leading-[0.96] tracking-[-0.025em] text-[var(--on-surface)]">
+          Your career,{" "}
+          <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">
+            composed
+          </em>{" "}
+          — not just listed.
+        </h1>
+
+        <p className="mt-7 max-w-[520px] text-[19px] leading-[1.55] text-[var(--on-surface-soft)]">
+          Resumi is an editorial resume workspace. Structured like a profile,
+          rendered like a document, polished by an AI that reads between the
+          lines.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center gap-3.5">
+          <MagneticButton>
+            <Link href="/signup">
+              <Button className="magical-gradient magic-shine h-12 rounded-full px-6 text-[15px] font-medium shadow-[0_1px_0_rgba(255,255,255,0.15)_inset,0_10px_24px_-8px_var(--magic-glow)]">
+                Start composing
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </Link>
+          </MagneticButton>
+          <MagneticButton strength={0.25}>
+            <Link href="/login">
+              <Button
+                variant="outline"
+                className="h-12 rounded-full border-0 bg-[var(--surface-raised)] px-6 text-[15px] text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong),var(--sh-1)] hover:shadow-[inset_0_0_0_1px_var(--ink),var(--sh-2)]"
+              >
+                See the editor
+              </Button>
+            </Link>
+          </MagneticButton>
+          <span className="ml-1 inline-flex items-center gap-1.5 text-[13px] text-[var(--on-surface-muted)]">
+            Press
+            <kbd className="font-mono rounded bg-[var(--surface-raised)] px-1.5 py-0.5 text-[11px] shadow-[inset_0_0_0_1px_var(--border-ghost-strong),0_1px_0_var(--border-ghost-strong)]">
+              ⌘K
+            </kbd>
+            anywhere
+          </span>
+        </div>
+      </section>
+
+      {/* Hero stage — paper preview + callouts */}
+      <section className="relative px-10 py-20">
+        <div className="absolute inset-x-0 top-12 bottom-20 bg-gradient-to-b from-transparent via-[var(--surface-sunk)] to-transparent" />
+        <div className="relative mx-auto grid max-w-[1200px] place-items-center">
+          <div className="relative aspect-[8.5/11] w-full max-w-[720px] overflow-hidden rounded bg-white shadow-paper [transform:perspective(1800px)_rotateX(3deg)] transition-transform duration-[600ms] ease-[var(--ease-out)] hover:[transform:perspective(1800px)_rotateX(0deg)]">
+            <PaperPreview />
+          </div>
+
+          <div className="float absolute left-[-2%] top-[6%] z-10 flex max-w-[260px] items-start gap-2.5 rounded-xl bg-[var(--surface-raised)] p-3.5 text-[13px] shadow-[var(--sh-3)]">
+            <div className="flex h-7 w-7 flex-none place-items-center rounded-[8px] bg-[var(--surface-sunk)]">
+              <Sparkles className="h-3.5 w-3.5" />
+            </div>
+            <div>
+              <div className="font-medium leading-tight">Rewrote 3 bullets</div>
+              <div className="mt-0.5 text-[12px] text-[var(--on-surface-muted)]">
+                Stronger verbs, added metrics
+              </div>
+            </div>
+          </div>
+
+          <div
+            className="float absolute right-[-4%] top-[36%] z-10 flex max-w-[260px] items-start gap-2.5 rounded-xl p-3.5 text-[13px] shadow-magic [animation-delay:-2s]"
+            style={{
+              background: "linear-gradient(135deg, var(--magic-1), var(--magic-2))",
+              color: "white",
+            }}
+          >
+            <div className="flex h-7 w-7 flex-none place-items-center rounded-[8px] bg-white/15">
+              <Target className="h-3.5 w-3.5" />
+            </div>
+            <div>
+              <div className="font-medium leading-tight">Match: 92%</div>
+              <div className="mt-0.5 text-[12px] text-white/80">Senior PM @ Linear</div>
+            </div>
+          </div>
+
+          <div className="float absolute bottom-[12%] left-[-1%] z-10 flex max-w-[260px] items-start gap-2.5 rounded-xl bg-[var(--surface-raised)] p-3.5 text-[13px] shadow-[var(--sh-3)] [animation-delay:-4s]">
+            <div className="flex h-7 w-7 flex-none place-items-center rounded-[8px] bg-[var(--surface-sunk)]">
+              <Wand2 className="h-3.5 w-3.5" />
+            </div>
+            <div>
+              <div className="font-medium leading-tight">Saved · just now</div>
+              <div className="mt-0.5 text-[12px] text-[var(--on-surface-muted)]">
+                Version 4 — Linear tailor
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="px-6 py-24 bg-[var(--surface-container-low)]">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--on-surface-variant)]">
-            The Full Workflow
-          </p>
-          <h2 className="font-headline mt-3 text-3xl font-bold text-[var(--on-surface)]">
-            Every stage of the resume lifecycle, solved.
-          </h2>
+      {/* How it works — combined workflow + features */}
+      <section id="how" className="mx-auto max-w-[1240px] px-10 py-[120px]">
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--on-surface-muted)]">
+          How Resumi works
+        </p>
+        <h2 className="font-headline mt-3.5 max-w-[900px] text-[clamp(40px,5vw,64px)] font-normal leading-[1.02] tracking-[-0.02em]">
+          From blank page to{" "}
+          <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">
+            offer-ready
+          </em>
+          , in four moves.
+        </h2>
+        <p className="mt-5 max-w-[640px] text-[17px] leading-[1.55] text-[var(--on-surface-soft)]">
+          One tool, every stage of the resume lifecycle. You write; Resumi
+          sharpens, tailors, and tracks — so every draft works harder.
+        </p>
 
-          <div className="mt-14 grid gap-6 md:grid-cols-2">
-            {FEATURES.map((feature) => (
+        <div className="mt-[60px] grid grid-cols-1 gap-[1px] overflow-hidden rounded-2xl bg-[var(--border-ghost)] shadow-[inset_0_0_0_1px_var(--border-ghost)] md:grid-cols-2">
+          {STEPS.map((s) => {
+            const parts = s.title.split(s.italic);
+            const pre = parts[0] ?? "";
+            const post = parts.slice(1).join(s.italic);
+            return (
               <div
-                key={feature.title}
-                className="rounded-lg bg-[var(--surface-container-lowest)] p-8 shadow-ambient transition-all hover:translate-y-[-2px]"
+                key={s.n}
+                className="group relative flex flex-col gap-4 overflow-hidden bg-[var(--surface)] p-10 transition-colors hover:bg-[var(--surface-raised)]"
               >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-[var(--surface-container)]">
-                  <feature.icon className="h-5 w-5 text-[var(--on-surface)]" />
+                <span className="absolute left-0 top-0 h-0.5 w-0 bg-gradient-to-r from-[var(--magic-1)] to-[var(--magic-2)] transition-[width] duration-[var(--t-slow)] ease-[var(--ease-out)] group-hover:w-full" />
+                <div className="flex items-center gap-4">
+                  <span className="font-headline text-[54px] leading-none tracking-[-0.02em] text-[var(--on-surface-faint)] transition-colors group-hover:text-[var(--magic-2)]">
+                    {s.n}
+                  </span>
+                  <div
+                    className={`flex h-[42px] w-[42px] place-items-center rounded-[10px] bg-[var(--surface-sunk)] text-[var(--on-surface)] transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] group-hover:-rotate-[4deg] group-hover:text-[var(--cream)] ${
+                      s.magical
+                        ? "group-hover:[background:linear-gradient(135deg,var(--magic-1),var(--magic-2))]"
+                        : "group-hover:bg-[var(--ink)]"
+                    }`}
+                  >
+                    <s.icon className="mx-auto h-[18px] w-[18px]" />
+                  </div>
                 </div>
-                <h3 className="font-headline text-lg font-bold text-[var(--on-surface)]">
-                  {feature.title}
+                <h3 className="font-headline text-[32px] font-normal leading-tight tracking-[-0.015em]">
+                  {pre}
+                  <em className="serif-ital">{s.italic}</em>
+                  {post}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-[var(--on-surface-variant)]">
-                  {feature.description}
+                <p className="max-w-[42ch] text-[15px] leading-[1.55] text-[var(--on-surface-soft)]">
+                  {s.description}
                 </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Editorial section */}
-      <section id="workflow" className="px-6 py-24">
-        <div className="mx-auto max-w-6xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--on-surface-variant)]">
-            Editorial Precision
-          </p>
-          <h2 className="font-headline mt-3 max-w-xl text-3xl font-bold text-[var(--on-surface)]">
-            Your career story, rendered with the precision it deserves.
-          </h2>
-          <p className="mt-4 max-w-xl text-[var(--on-surface-variant)] leading-relaxed">
-            We don&apos;t do cookie-cutter templates. The Architect treats your resume
-            like an editorial product - layered typography, tonal depth, and
-            intentional whitespace that communicates professionalism before a
-            single word is read.
-          </p>
+            );
+          })}
         </div>
       </section>
 
       {/* CTA */}
-      <section id="pricing" className="px-6 py-20 bg-[var(--surface-container-low)]">
-        <div className="mx-auto max-w-2xl text-center">
-          <h2 className="font-headline text-3xl font-bold text-[var(--on-surface)]">
-            Ready to design your future?
+      <section id="pricing" className="px-10">
+        <div className="relative mx-auto my-10 max-w-[1160px] overflow-hidden rounded-[28px] bg-[var(--ink)] px-10 py-20 text-center text-[var(--cream)]">
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(600px 400px at 80% 0%, rgba(109,60,255,0.35), transparent 60%), radial-gradient(700px 500px at 10% 100%, rgba(226,98,47,0.20), transparent 60%)",
+            }}
+          />
+          <h2 className="font-headline relative text-[clamp(44px,6vw,84px)] font-normal leading-none tracking-[-0.025em]">
+            Ready to{" "}
+            <em className="serif-ital" style={{ color: "#c9b2ff" }}>
+              compose
+            </em>{" "}
+            your future?
           </h2>
-          <p className="mt-3 text-[var(--on-surface-variant)]">
-            Start for free. No credit card required.
+          <p className="relative mx-auto mt-5 max-w-xl text-[17px] text-[rgba(250,248,243,0.75)]">
+            Start free. No credit card. Built for careers that take themselves
+            seriously — without taking themselves too seriously.
           </p>
-          <Link href="/signup">
-            <Button size="lg" className="mt-8 magical-gradient text-white h-12 px-8 text-base">
-              Start Your Professional Journey
-            </Button>
-          </Link>
+          <div className="relative mt-9 inline-flex flex-wrap justify-center gap-3.5">
+            <MagneticButton>
+              <Link href="/signup">
+                <Button className="magical-gradient magic-shine h-12 rounded-full px-7 text-[15px]">
+                  Start your first resume
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </Link>
+            </MagneticButton>
+            <MagneticButton strength={0.2}>
+              <Link href="/login">
+                <Button
+                  variant="ghost"
+                  className="h-12 rounded-full bg-transparent px-7 text-[15px] text-[var(--cream)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)] hover:bg-white/5 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.7)]"
+                >
+                  Sign in
+                  <ArrowUpRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </Link>
+            </MagneticButton>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-ghost px-6 py-8 bg-[var(--surface)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <span className="font-headline text-sm font-semibold text-[var(--on-surface)]">
-            The Architect
-          </span>
-          <span className="text-xs text-[var(--on-surface-variant)]">
-            Built for professionals who take their careers seriously.
-          </span>
-        </div>
+      <footer className="mx-auto flex max-w-[1240px] justify-between px-10 py-10 text-[13px] text-[var(--on-surface-muted)]">
+        <span>
+          <span className="font-headline text-[15px] text-[var(--on-surface)]">
+            Resumi
+          </span>{" "}
+          — your career, composed.
+        </span>
+        <span>© {new Date().getFullYear()} Built for the serious.</span>
       </footer>
     </div>
   );
 }
+

@@ -151,10 +151,15 @@ export default function ImportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Import Resume</h1>
-        <p className="mt-1 text-muted-foreground">
-          Upload a PDF or paste your resume text. AI will extract structured
-          data into your career profile.
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--on-surface-muted)]">
+          Bring it in
+        </p>
+        <h1 className="font-headline mt-1.5 text-[clamp(32px,4vw,44px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--on-surface)]">
+          Import a <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">resume</em>
+        </h1>
+        <p className="mt-2 text-[var(--on-surface-muted)]">
+          Upload a PDF or paste the text. AI extracts structured data into your
+          career profile.
         </p>
       </div>
 

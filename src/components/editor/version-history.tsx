@@ -309,7 +309,7 @@ function VersionCard({
               variant="ghost"
               size="sm"
               onClick={onDelete}
-              className="h-7 text-xs gap-1 text-[var(--on-surface-variant)] hover:text-red-600"
+              className="h-7 text-xs gap-1 text-[var(--on-surface-variant)] hover:text-[var(--destructive)]"
               disabled={isPending}
             >
               <Trash2 className="h-3 w-3" />

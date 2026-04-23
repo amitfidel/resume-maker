@@ -28,9 +28,14 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Career Profile</h1>
-        <p className="mt-1 text-muted-foreground">
-          Your career data is the source of truth for all your resumes.
+        <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--on-surface-muted)]">
+          Source of truth
+        </p>
+        <h1 className="font-headline mt-1.5 text-[clamp(32px,4vw,44px)] font-normal leading-[1.05] tracking-[-0.02em] text-[var(--on-surface)]">
+          Career <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">profile</em>
+        </h1>
+        <p className="mt-2 text-[var(--on-surface-muted)]">
+          Build it once; remix it for every role. Every resume draws from here.
         </p>
       </div>
 

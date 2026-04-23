@@ -13,38 +13,40 @@ type Props = {
 
 export function TemplatePicker({ resumeId, currentTemplateId }: Props) {
   return (
-    <div className="space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground">Template</h3>
-      <div className="grid grid-cols-2 gap-2">
-        {TEMPLATES.map((tpl) => {
-          const isActive = tpl.id === currentTemplateId;
-          return (
-            <button
-              key={tpl.id}
-              onClick={() => {
-                if (!isActive) changeTemplate(resumeId, tpl.id);
-              }}
-              className={cn(
-                "group relative rounded-lg overflow-hidden border-2 transition-all",
-                isActive
-                  ? "border-primary shadow-sm"
-                  : "border-transparent hover:border-gray-300"
-              )}
-              title={tpl.description}
-            >
-              <TemplateThumbnail style={tpl.style} />
-              <div className="bg-white p-2 text-left">
-                <p className="text-[0.7rem] font-semibold truncate">{tpl.name}</p>
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {TEMPLATES.map((tpl) => {
+        const isActive = tpl.id === currentTemplateId;
+        return (
+          <button
+            key={tpl.id}
+            onClick={() => {
+              if (!isActive) changeTemplate(resumeId, tpl.id);
+            }}
+            className={cn(
+              "group relative overflow-hidden rounded-[12px] bg-[var(--surface-raised)] text-left transition-all duration-[var(--t-mid)] hover:-translate-y-0.5",
+              isActive
+                ? "shadow-[inset_0_0_0_2px_var(--ink),var(--sh-3)]"
+                : "shadow-[inset_0_0_0_1px_var(--border-ghost),var(--sh-1)] hover:shadow-[inset_0_0_0_1px_var(--border-ghost-strong),var(--sh-2)]",
+            )}
+            title={tpl.description}
+          >
+            <TemplateThumbnail style={tpl.style} />
+            <div className="bg-[var(--surface-raised)] p-3">
+              <p className="truncate text-[13px] font-medium text-[var(--on-surface)]">
+                {tpl.name}
+              </p>
+              <p className="mt-0.5 truncate text-[11px] text-[var(--on-surface-muted)]">
+                {tpl.description}
+              </p>
+            </div>
+            {isActive && (
+              <div className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-[var(--ink)] text-[var(--cream)]">
+                <Check className="h-3 w-3" />
               </div>
-              {isActive && (
-                <div className="absolute top-1.5 right-1.5 rounded-full bg-primary p-0.5">
-                  <Check className="h-3 w-3 text-primary-foreground" />
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -58,7 +60,7 @@ function TemplateThumbnail({ style }: { style: TemplateStyle }) {
   if (style.layout === "two-column") {
     return (
       <div
-        className="h-24 flex"
+        className="h-32 flex"
         style={{ fontFamily: style.fontFamily, backgroundColor: "white" }}
       >
         <div
@@ -107,7 +109,7 @@ function TemplateThumbnail({ style }: { style: TemplateStyle }) {
   // Single-column layouts
   return (
     <div
-      className="h-24 p-2"
+      className="h-32 p-2"
       style={{
         fontFamily: style.fontFamily,
         backgroundColor: "white",

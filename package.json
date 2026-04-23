@@ -10,7 +10,12 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "sb:start": "supabase start",
+    "sb:stop": "supabase stop",
+    "sb:status": "supabase status",
+    "sb:reset": "supabase db reset",
+    "sb:studio": "supabase status -o env --override-name API_URL=API_URL && echo Studio at http://127.0.0.1:55323"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.69",
@@ -53,6 +58,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.3",
     "postcss": "^8.5.9",
+    "supabase": "^2.94.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2"
   }

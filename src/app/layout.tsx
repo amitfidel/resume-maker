@@ -1,15 +1,31 @@
 import type { Metadata } from "next";
-import { Inter, Manrope } from "next/font/google";
+import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
+import { TweaksPanel } from "@/components/layout/tweaks-panel";
+import { CommandPalette } from "@/components/layout/command-palette";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
-const manrope = Manrope({ subsets: ["latin"], variable: "--font-headline" });
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-ui",
+  weight: ["300", "400", "500", "600", "700"],
+});
+const instrumentSerif = Instrument_Serif({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: "400",
+  style: ["normal", "italic"],
+});
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono-g",
+  weight: ["400", "500"],
+});
 
 export const metadata: Metadata = {
-  title: "The Architect - AI Resume Workspace",
+  title: "Resumi — Your career, composed.",
   description:
-    "Architect your professional identity. Create, tailor, and track polished resumes with AI assistance.",
+    "Resumi is the editorial AI resume workspace. Compose, tailor, and track polished resumes with a smooth, thoughtful editor.",
 };
 
 export default function RootLayout({
@@ -18,8 +34,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn(inter.variable, manrope.variable)}>
-      <body className="font-body antialiased">{children}</body>
+    <html
+      lang="en"
+      className={cn(geist.variable, instrumentSerif.variable, geistMono.variable)}
+      data-accent="indigo"
+      data-density="comfortable"
+      data-motion="expressive"
+      data-texture="paper"
+      suppressHydrationWarning
+    >
+      {/*
+        `suppressHydrationWarning` silences diffs caused by browser extensions
+        injecting attributes (e.g. Edge's form-filler adds `fdprocessedid` to
+        every form control between SSR and hydration). No app-logic effect.
+      */}
+      <body className="font-body antialiased" suppressHydrationWarning>
+        {children}
+        <CommandPalette />
+        <TweaksPanel />
+      </body>
     </html>
   );
 }

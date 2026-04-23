@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -22,11 +21,11 @@ import {
 import type { JobApplication } from "@/db/schema";
 
 const COLUMNS = [
-  { value: "saved", label: "Saved", dot: "bg-gray-400" },
-  { value: "applied", label: "Applied", dot: "bg-blue-500" },
-  { value: "interviewing", label: "Interviewing", dot: "bg-[var(--tertiary)]" },
-  { value: "offered", label: "Offered", dot: "bg-green-500" },
-  { value: "rejected", label: "Rejected", dot: "bg-red-500" },
+  { value: "saved", label: "Saved", dot: "#9aa0b1" },
+  { value: "applied", label: "Applied", dot: "#6d3cff" },
+  { value: "interviewing", label: "Interviewing", dot: "#d7a54a" },
+  { value: "offered", label: "Offered", dot: "#3ec28f" },
+  { value: "rejected", label: "Rejected", dot: "#d24545" },
 ];
 
 export function ApplicationBoard({
@@ -110,82 +109,107 @@ export function ApplicationBoard({
       </div>
 
       {applications.length === 0 ? (
-        <div className="rounded-lg bg-[var(--surface-container-lowest)] p-16 text-center shadow-ambient">
-          <Briefcase className="mx-auto mb-4 h-16 w-16 text-[var(--on-surface-variant)] opacity-30" />
-          <h2 className="font-headline text-lg font-bold text-[var(--on-surface)]">
-            No applications yet
+        <div className="rounded-2xl bg-[var(--surface-raised)] p-16 text-center shadow-[var(--sh-1)]">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[14px] bg-[var(--surface-sunk)]">
+            <Briefcase className="h-6 w-6 text-[var(--on-surface-soft)]" />
+          </div>
+          <h2 className="font-headline mt-5 text-2xl font-normal">
+            The pipeline starts <em className="serif-ital">here</em>.
           </h2>
-          <p className="mt-2 max-w-sm mx-auto text-sm text-[var(--on-surface-variant)]">
-            Start tracking your job applications to see which resumes perform best.
+          <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--on-surface-muted)]">
+            Track applications to see which resume versions land interviews.
           </p>
         </div>
       ) : (
         /* Kanban columns */
-        <div className="flex gap-5 overflow-x-auto pb-4">
-          {columns
-            .filter((col) => col.apps.length > 0)
-            .map((col) => (
-              <div key={col.value} className="w-72 shrink-0">
-                {/* Column header */}
-                <div className="mb-3 flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${col.dot}`} />
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--on-surface-variant)]">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+          {columns.map((col) => (
+            <div
+              key={col.value}
+              className="rounded-2xl bg-[var(--surface-raised)] p-4 shadow-[var(--sh-1)]"
+            >
+              {/* Column header */}
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-block h-1.5 w-1.5 rounded-full"
+                    style={{ background: col.dot }}
+                  />
+                  <h3 className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[var(--on-surface-soft)]">
                     {col.label}
                   </h3>
-                  <span className="text-xs text-[var(--on-surface-variant)]">
-                    {col.apps.length}
-                  </span>
                 </div>
+                <span className="font-mono text-[12px] text-[var(--on-surface-muted)]">
+                  {col.apps.length.toString().padStart(2, "0")}
+                </span>
+              </div>
 
-                {/* Cards */}
-                <div className="space-y-3">
-                  {col.apps.map((app) => (
-                    <div
-                      key={app.id}
-                      className="rounded-lg bg-[var(--surface-container-lowest)] p-4 shadow-ambient transition-all hover:translate-y-[-1px]"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--on-surface)]">
-                            {app.position}
-                          </p>
-                          <p className="text-xs text-[var(--on-surface-variant)] mt-0.5">
-                            {app.company}
-                          </p>
-                        </div>
-                        <form action={() => deleteApplication(app.id)}>
-                          <button className="text-[var(--on-surface-variant)] hover:text-[var(--destructive)] opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Trash2 className="h-3.5 w-3.5" />
+              {/* Cards */}
+              <div className="space-y-2">
+                {col.apps.length === 0 && (
+                  <div className="rounded-[8px] py-6 text-center text-[12px] text-[var(--on-surface-faint)]">
+                    Empty
+                  </div>
+                )}
+                {col.apps.map((app) => (
+                  <div
+                    key={app.id}
+                    className="group rounded-[8px] bg-[var(--surface)] p-3 shadow-[var(--sh-1)] transition-transform hover:-translate-y-px"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-[13px] font-medium text-[var(--on-surface)]">
+                          {app.company}
+                        </p>
+                        <p className="mt-0.5 truncate text-[12px] text-[var(--on-surface-muted)]">
+                          {app.position}
+                        </p>
+                      </div>
+                      <form action={() => deleteApplication(app.id)}>
+                        <button
+                          type="submit"
+                          className="rounded p-1 text-[var(--on-surface-muted)] opacity-0 transition-all group-hover:opacity-100 hover:bg-[var(--surface-sunk)] hover:text-[var(--destructive)]"
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </form>
+                    </div>
+                    <div className="mt-2.5 flex items-center justify-between">
+                      <span
+                        className="inline-block h-1.5 w-1.5 rounded-full"
+                        style={{ background: col.dot }}
+                      />
+                      <span className="font-mono text-[11px] text-[var(--on-surface-muted)]">
+                        {app.appliedDate
+                          ? new Date(app.appliedDate + "T00:00:00").toLocaleDateString(
+                              "en-US",
+                              { month: "short", day: "numeric" },
+                            )
+                          : "—"}
+                      </span>
+                    </div>
+                    {/* Status switcher */}
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {COLUMNS.filter((s) => s.value !== app.status).map((s) => (
+                        <form
+                          key={s.value}
+                          action={() => updateApplicationStatus(app.id, s.value)}
+                        >
+                          <button
+                            type="submit"
+                            className="rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] text-[var(--on-surface-muted)] transition-colors hover:bg-[var(--magic-tint)] hover:text-[var(--magic-1)]"
+                          >
+                            → {s.label}
                           </button>
                         </form>
-                      </div>
-                      {app.appliedDate && (
-                        <p className="mt-2 text-[0.65rem] text-[var(--on-surface-variant)]">
-                          Applied {new Date(app.appliedDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                        </p>
-                      )}
-                      {/* Status switcher */}
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {COLUMNS.map((s) => (
-                          <form key={s.value} action={() => updateApplicationStatus(app.id, s.value)}>
-                            <button
-                              type="submit"
-                              className={`rounded-md px-2 py-0.5 text-[0.6rem] font-medium transition-all ${
-                                app.status === s.value
-                                  ? "bg-[var(--tertiary-fixed)] text-[var(--tertiary)]"
-                                  : "text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)]"
-                              }`}
-                            >
-                              {s.label}
-                            </button>
-                          </form>
-                        ))}
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          ))}
         </div>
       )}
     </div>

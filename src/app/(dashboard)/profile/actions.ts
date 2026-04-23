@@ -132,6 +132,40 @@ export async function updateCareerProfile(formData: FormData) {
   revalidatePath("/profile");
 }
 
+/**
+ * Update a single header field on the career profile. Also handles `fullName`
+ * which lives on the users table, not careerProfiles. Called from the resume
+ * content editor's Personal Details form.
+ */
+type HeaderField =
+  | "fullName"
+  | "headline"
+  | "location"
+  | "phone"
+  | "email"
+  | "linkedinUrl"
+  | "githubUrl"
+  | "websiteUrl";
+
+export async function updateHeaderField(field: HeaderField, value: string) {
+  const user = await requireUser();
+  const clean = value.trim() === "" ? null : value;
+
+  if (field === "fullName") {
+    const { users } = await import("@/db/schema");
+    await db.update(users).set({ fullName: clean }).where(eq(users.id, user.id));
+  } else {
+    await db
+      .update(careerProfiles)
+      .set({ [field]: clean, updatedAt: new Date() })
+      .where(eq(careerProfiles.userId, user.id));
+  }
+
+  revalidatePath("/profile");
+  // All resumes depend on the header — nuke their edit pages too.
+  revalidatePath("/resumes", "layout");
+}
+
 // ============================================================
 // Work Experience
 // ============================================================

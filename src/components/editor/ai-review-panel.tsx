@@ -40,35 +40,59 @@ export function AiReviewPanel({ resumeId, onClose }: Props) {
   }, [resumeId]);
 
   return (
-    <aside className="flex h-full w-80 shrink-0 flex-col border-l bg-card">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-500" />
-          <h3 className="text-sm font-semibold">AI Review</h3>
+    <aside className="flex h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+            style={{
+              background: "linear-gradient(135deg, var(--magic-1), var(--magic-2))",
+              boxShadow: "var(--sh-magic)",
+            }}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-white" />
+          </div>
+          <h3 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
+            AI review
+          </h3>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-[10px] text-[var(--on-surface-muted)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+          onClick={onClose}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-5">
         {!review && !isLoading && (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Sparkles className="mb-3 h-10 w-10 text-purple-300" />
-            <p className="text-sm text-muted-foreground">
+            <div
+              className="mb-4 grid h-12 w-12 place-items-center rounded-[14px]"
+              style={{ background: "var(--magic-tint)" }}
+            >
+              <Sparkles className="h-5 w-5 text-[var(--magic-1)]" />
+            </div>
+            <p className="text-sm text-[var(--on-surface-muted)]">
               Get AI-powered feedback on your resume.
             </p>
-            <Button onClick={handleReview} className="mt-4" size="sm">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Review My Resume
+            <Button
+              onClick={handleReview}
+              size="sm"
+              className="magical-gradient magic-shine mt-4 rounded-full"
+            >
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              Review my resume
             </Button>
           </div>
         )}
 
         {isLoading && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Analyzing your resume...
+          <div className="font-mono flex items-center gap-2 rounded-[10px] bg-[var(--surface-sunk)] px-3 py-2.5 text-[12px] text-[var(--on-surface-soft)]">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Analyzing your resume…
           </div>
         )}
 
@@ -80,10 +104,15 @@ export function AiReviewPanel({ resumeId, onClose }: Props) {
         )}
 
         {!isLoading && review && (
-          <div className="mt-4 border-t pt-4">
-            <Button onClick={handleReview} variant="outline" size="sm" className="w-full">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Review Again
+          <div className="mt-4 border-t border-[var(--border-ghost)] pt-4">
+            <Button
+              onClick={handleReview}
+              variant="outline"
+              size="sm"
+              className="w-full rounded-full border-0 bg-[var(--surface-raised)] text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
+            >
+              <Sparkles className="mr-2 h-3.5 w-3.5" />
+              Review again
             </Button>
           </div>
         )}

@@ -4,19 +4,41 @@ import { useCallback } from "react";
 import { EditableText } from "./editable-text";
 import { EditableDateRange } from "./editable-date-range";
 import {
-  updateSummary,
-  updateBlockHeading,
-  updateItemField,
-  updateBulletText,
+  updateSummary as _updateSummary,
+  updateBlockHeading as _updateBlockHeading,
+  updateItemField as _updateItemField,
+  updateBulletText as _updateBulletText,
   addItemToBlock,
   removeItemFromBlock,
   addBulletToItem,
   deleteBlock,
 } from "@/app/(dashboard)/resumes/actions";
 import {
-  updateWorkExperienceDates,
-  updateEducationDates,
+  updateWorkExperienceDates as _updateWorkExperienceDates,
+  updateEducationDates as _updateEducationDates,
 } from "@/app/(dashboard)/profile/actions";
+
+// Wrap save actions so the live save indicator can track them
+function trackSave<A extends unknown[], R>(fn: (...args: A) => Promise<R>) {
+  return async (...args: A): Promise<R> => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("resumi:save-start"));
+    }
+    try {
+      return await fn(...args);
+    } finally {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("resumi:save-end"));
+      }
+    }
+  };
+}
+const updateSummary = trackSave(_updateSummary);
+const updateBlockHeading = trackSave(_updateBlockHeading);
+const updateItemField = trackSave(_updateItemField);
+const updateBulletText = trackSave(_updateBulletText);
+const updateWorkExperienceDates = trackSave(_updateWorkExperienceDates);
+const updateEducationDates = trackSave(_updateEducationDates);
 import type {
   ResolvedResume,
   ResolvedBlock,
@@ -462,7 +484,7 @@ function InteractiveBlock({
         />
         <button
           onClick={handleDeleteBlock}
-          className="opacity-0 group-hover/section:opacity-100 transition-opacity text-gray-400 hover:text-red-500"
+          className="opacity-0 group-hover/section:opacity-100 transition-opacity text-[var(--on-surface-faint)] hover:text-[var(--destructive)]"
           title="Remove section from this resume"
         >
           <Trash2 className="h-3 w-3" />
@@ -595,7 +617,7 @@ function ItemWrapper({
       {children}
       <button
         onClick={handleDelete}
-        className="absolute -right-1 top-0 opacity-0 group-hover/item:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
+        className="absolute -right-1 top-0 opacity-0 group-hover/item:opacity-100 transition-opacity text-[var(--on-surface-faint)] hover:text-[var(--destructive)]"
         title="Remove from this resume"
       >
         <Trash2 className="h-3 w-3" />
@@ -871,7 +893,7 @@ function SkillsItems({
                 />
                 <button
                   onClick={() => removeItemFromBlock(resumeId, e.item.id)}
-                  className="ml-0.5 opacity-0 group-hover/skill:opacity-100 transition-opacity text-gray-300 hover:text-red-500"
+                  className="ml-0.5 opacity-0 group-hover/skill:opacity-100 transition-opacity text-[var(--on-surface-faint)] hover:text-[var(--destructive)]"
                 >
                   <Trash2 className="h-2.5 w-2.5" />
                 </button>

@@ -36,8 +36,8 @@ export function EditableDateRange({
         onClick={() => setIsOpen(true)}
         style={style}
         className={cn(
-          "cursor-pointer rounded-sm px-1 transition-colors hover:bg-blue-50",
-          (!startDate && !endDate) && "text-gray-300 italic",
+          "cursor-pointer rounded px-1 transition-colors hover:bg-[color:color-mix(in_oklab,var(--magic-tint)_50%,transparent)]",
+          (!startDate && !endDate) && "text-[var(--on-surface-faint)] italic",
           className
         )}
       >

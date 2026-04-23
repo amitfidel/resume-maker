@@ -154,21 +154,27 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
   };
 
   return (
-    <aside className="flex h-full w-96 shrink-0 flex-col bg-[var(--surface-container-lowest)] border-l border-ghost">
+    <aside className="flex h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)]">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-ghost px-4 py-3 glass-effect">
-        <div className="flex items-center gap-2">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md magical-gradient">
+      <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+            style={{
+              background: "linear-gradient(135deg, var(--magic-1), var(--magic-2))",
+              boxShadow: "var(--sh-magic)",
+            }}
+          >
             <Sparkles className="h-3.5 w-3.5 text-white" />
           </div>
-          <h3 className="font-headline text-sm font-bold text-[var(--on-surface)]">
-            Magic AI Chat
+          <h3 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
+            AI companion
           </h3>
         </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 text-[var(--on-surface-variant)]"
+          className="h-8 w-8 rounded-[10px] text-[var(--on-surface-muted)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
           onClick={onClose}
         >
           <X className="h-4 w-4" />
@@ -176,31 +182,36 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div ref={scrollRef} className="flex-1 space-y-2.5 overflow-y-auto p-5">
         {messages.map((msg, i) => (
           <div
             key={i}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <div
-              className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm ${
+              className={`max-w-[92%] px-3.5 py-3 text-[13px] leading-[1.5] ${
                 msg.role === "user"
-                  ? "magical-gradient text-white"
-                  : "bg-[var(--surface-container)] text-[var(--on-surface)]"
+                  ? "rounded-[14px] rounded-br-[4px] bg-[var(--ink)] text-[var(--cream)]"
+                  : "rounded-[14px] rounded-bl-[4px] bg-[var(--magic-tint)] text-[var(--magic-1)] dark:text-[#d9caff]"
               }`}
+              style={{ animation: "bubble-in 500ms var(--ease-spring) both" }}
             >
-              <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+              <p className="whitespace-pre-wrap">{msg.content}</p>
 
               {msg.actions && msg.actions.length > 0 && (
-                <div className="mt-3 space-y-1.5 border-t border-white/10 pt-3">
+                <div
+                  className={`mt-3 space-y-1.5 border-t pt-3 ${
+                    msg.role === "user" ? "border-white/10" : "border-[var(--magic-1)]/10"
+                  }`}
+                >
                   {msg.actions.map((action, ai) => (
                     <div
                       key={ai}
-                      className={`flex items-center gap-2 text-xs ${
-                        msg.role === "user" ? "text-white/90" : "text-[var(--on-surface-variant)]"
+                      className={`font-mono flex items-center gap-2 text-[11px] ${
+                        msg.role === "user" ? "text-white/80" : "text-[var(--on-surface-soft)]"
                       }`}
                     >
-                      <CheckCircle2 className="h-3 w-3 shrink-0" />
+                      <CheckCircle2 className="h-3 w-3 shrink-0 text-[var(--success)]" />
                       <span>{action.description}</span>
                     </div>
                   ))}
@@ -212,11 +223,12 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
 
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-[var(--surface-container)] rounded-lg px-3.5 py-2.5 text-sm text-[var(--on-surface-variant)]">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Thinking...
-              </div>
+            <div
+              className="font-mono flex items-center gap-2 rounded-[10px] bg-[var(--surface-sunk)] px-3 py-2.5 text-[12px] text-[var(--on-surface-soft)]"
+              style={{ animation: "bubble-in 500ms var(--ease-spring) both" }}
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              thinking…
             </div>
           </div>
         )}
@@ -224,8 +236,8 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
 
       {/* Suggestions */}
       {messages.length === 1 && !isLoading && (
-        <div className="border-t border-ghost px-4 py-3 bg-[var(--surface-container-low)]">
-          <p className="text-[0.7rem] font-medium uppercase tracking-wider text-[var(--on-surface-variant)] mb-2">
+        <div className="border-t border-[var(--border-ghost)] px-5 py-3.5">
+          <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
             Try asking
           </p>
           <div className="flex flex-wrap gap-1.5">
@@ -233,7 +245,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
               <button
                 key={s}
                 onClick={() => sendMessage(s)}
-                className="rounded-md bg-[var(--surface-container-lowest)] px-2.5 py-1 text-xs text-[var(--on-surface)] hover:bg-[var(--surface-container)] transition-colors"
+                className="rounded-full bg-[var(--surface-sunk)] px-3 py-1.5 text-[12px] text-[var(--on-surface-soft)] transition-colors hover:bg-[var(--magic-tint)] hover:text-[var(--magic-1)]"
               >
                 {s}
               </button>
@@ -244,29 +256,34 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
 
       {/* Listening indicator */}
       {isListening && (
-        <div className="flex items-center gap-2 border-t border-ghost px-4 py-2 bg-red-50 text-xs text-red-700">
+        <div className="flex items-center gap-2 border-t border-[var(--border-ghost)] bg-[color:color-mix(in_oklab,var(--magic-tint)_70%,transparent)] px-5 py-2 text-[12px] text-[var(--magic-1)]">
           <div className="flex gap-0.5">
-            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "0ms" }} />
-            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "150ms" }} />
-            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "300ms" }} />
-            <span className="h-3 w-0.5 animate-pulse rounded-full bg-red-500" style={{ animationDelay: "450ms" }} />
+            {[0, 150, 300, 450].map((d) => (
+              <span
+                key={d}
+                className="h-3 w-0.5 animate-pulse rounded-full bg-[var(--magic-2)]"
+                style={{ animationDelay: `${d}ms` }}
+              />
+            ))}
           </div>
-          <span>Listening… speak clearly. Click the mic to stop.</span>
+          <span>Listening… speak clearly.</span>
         </div>
       )}
 
       {speechError && (
-        <div className="border-t border-ghost px-4 py-2 bg-amber-50 text-xs text-amber-700">
+        <div className="border-t border-[var(--border-ghost)] bg-[color:color-mix(in_oklab,var(--warn)_15%,transparent)] px-5 py-2 text-[12px] text-[var(--warn)]">
           Mic error: {speechError}
         </div>
       )}
 
       {/* Input */}
-      <form
-        onSubmit={handleSubmit}
-        className="border-t border-ghost p-3 bg-[var(--surface-container-low)]"
-      >
-        <div className="flex items-end gap-2">
+      <form onSubmit={handleSubmit} className="p-4">
+        <div
+          className="flex items-end gap-2.5 rounded-[12px] bg-[var(--surface-raised)] p-3 transition-shadow focus-within:shadow-[inset_0_0_0_2px_var(--magic-2),0_6px_20px_-8px_var(--magic-glow)]"
+          style={{
+            boxShadow: "inset 0 0 0 1px var(--border-ghost-strong), var(--sh-1)",
+          }}
+        >
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -276,40 +293,43 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
                 handleSubmit(e);
               }
             }}
-            placeholder={isListening ? "Listening..." : "Ask me to change something..."}
+            placeholder={isListening ? "Listening…" : "Ask me to change something…"}
             rows={2}
-            className="flex-1 resize-none bg-[var(--surface-container-lowest)] border-ghost text-sm"
+            className="max-h-[120px] flex-1 resize-none border-0 bg-transparent p-0 text-[14px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent"
             disabled={isLoading}
           />
-          <div className="flex flex-col gap-1.5">
+          <div className="flex gap-1.5">
             {isSupported && (
-              <Button
+              <button
                 type="button"
-                size="icon"
-                variant={isListening ? "default" : "outline"}
                 onClick={toggle}
                 disabled={isLoading}
-                className={cn(
-                  "h-9 w-9 shrink-0",
-                  isListening && "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-                )}
                 title={isListening ? "Stop listening" : "Speak your message"}
+                className={cn(
+                  "grid h-8 w-8 flex-none place-items-center rounded-[8px] transition-all",
+                  isListening
+                    ? "bg-[color:color-mix(in_oklab,var(--magic-tint)_80%,transparent)] text-[var(--magic-1)] animate-pulse"
+                    : "text-[var(--on-surface-muted)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+                )}
               >
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-              </Button>
+              </button>
             )}
-            <Button
+            <button
               type="submit"
-              size="icon"
-              className="magical-gradient text-white h-9 w-9 shrink-0"
               disabled={!input.trim() || isLoading}
+              className="grid h-8 w-8 flex-none place-items-center rounded-[8px] text-white transition-opacity disabled:opacity-40"
+              style={{
+                background: "linear-gradient(135deg, var(--magic-1), var(--magic-2))",
+                boxShadow: "var(--sh-magic)",
+              }}
             >
               <Send className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
         {!isSupported && (
-          <p className="mt-1.5 text-[0.65rem] text-[var(--on-surface-variant)]">
+          <p className="mt-2 text-[11px] text-[var(--on-surface-muted)]">
             Voice input requires Chrome, Edge, or Safari.
           </p>
         )}

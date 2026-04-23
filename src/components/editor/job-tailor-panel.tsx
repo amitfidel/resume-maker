@@ -53,13 +53,28 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
   }, [resumeId, jd]);
 
   return (
-    <aside className="flex h-full w-96 shrink-0 flex-col border-l bg-card">
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-blue-500" />
-          <h3 className="text-sm font-semibold">Job Tailoring</h3>
+    <aside className="flex h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)]">
+      <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
+        <div className="flex items-center gap-2.5">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-[8px]"
+            style={{
+              background: "linear-gradient(135deg, var(--magic-1), var(--magic-2))",
+              boxShadow: "var(--sh-magic)",
+            }}
+          >
+            <Target className="h-3.5 w-3.5 text-white" />
+          </div>
+          <h3 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
+            Job tailor
+          </h3>
         </div>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 rounded-[10px] text-[var(--on-surface-muted)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+          onClick={onClose}
+        >
           <X className="h-4 w-4" />
         </Button>
       </div>
@@ -81,18 +96,18 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
             <Button
               onClick={handleAnalyze}
               disabled={isLoading || !jd.trim()}
-              className="w-full"
+              className="magical-gradient magic-shine w-full rounded-full"
               size="sm"
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing...
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Analyzing…
                 </>
               ) : (
                 <>
-                  <Target className="mr-2 h-4 w-4" />
-                  Analyze Match
+                  <Target className="mr-2 h-3.5 w-3.5" />
+                  Analyze match
                 </>
               )}
             </Button>
@@ -100,19 +115,22 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
         ) : (
           <>
             {/* Match Score */}
-            <div className="rounded-lg border p-4 text-center">
+            <div className="rounded-2xl bg-[var(--surface-sunk)] p-5 text-center">
               <div
-                className={`text-3xl font-bold ${
+                className={`font-headline text-[44px] font-normal leading-none tracking-[-0.02em] ${
                   analysis.matchScore >= 70
-                    ? "text-green-600"
+                    ? "text-[var(--success)]"
                     : analysis.matchScore >= 40
-                    ? "text-amber-600"
-                    : "text-red-600"
+                    ? "text-[var(--warn)]"
+                    : "text-[var(--destructive)]"
                 }`}
               >
-                {analysis.matchScore}%
+                {analysis.matchScore}
+                <span className="text-[22px]">%</span>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">Match Score</p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+                Match score
+              </p>
             </div>
 
             {/* Feedback */}
@@ -178,7 +196,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
                     </p>
                   )}
                   <div className="flex items-start gap-1">
-                    <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-green-600" />
+                    <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-[var(--success)]" />
                     <p className="text-xs">{sug.suggested}</p>
                   </div>
                   <p className="text-xs text-muted-foreground italic">

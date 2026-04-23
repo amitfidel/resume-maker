@@ -3,22 +3,12 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { GripVertical, Eye, EyeOff, ChevronRight } from "lucide-react";
+import { GripVertical, Eye, EyeOff } from "lucide-react";
 import type { ResolvedBlock } from "@/lib/resume/types";
 
 type Props = {
   block: ResolvedBlock;
   onToggleVisibility: (blockId: string) => void;
-};
-
-const BLOCK_ICONS: Record<string, string> = {
-  summary: "S",
-  experience: "W",
-  education: "E",
-  skills: "S",
-  projects: "P",
-  certifications: "C",
-  custom: "X",
 };
 
 export function SortableBlock({ block, onToggleVisibility }: Props) {
@@ -36,36 +26,61 @@ export function SortableBlock({ block, onToggleVisibility }: Props) {
     transition,
   };
 
+  const itemCount =
+    "items" in block && Array.isArray((block as { items?: unknown[] }).items)
+      ? (block as { items: unknown[] }).items.length
+      : 0;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        "flex items-center gap-2.5 rounded-md px-3 py-2.5 transition-all cursor-pointer",
-        isDragging && "shadow-ambient opacity-90 z-50 bg-[var(--surface-container-lowest)]",
+        "group flex cursor-grab select-none items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-[13px] transition-colors",
+        isDragging &&
+          "z-50 bg-[var(--magic-tint)] text-[var(--magic-1)] shadow-[inset_0_0_0_1px_var(--magic-2)]",
+        !isDragging && "hover:bg-[var(--surface-sunk)]",
         block.isVisible
-          ? "text-[var(--on-surface)] hover:bg-[var(--surface-container)]"
-          : "text-[var(--on-surface-variant)] opacity-50"
+          ? "text-[var(--on-surface-soft)] hover:text-[var(--on-surface)]"
+          : "text-[var(--on-surface-muted)]",
       )}
     >
       <button
         {...attributes}
         {...listeners}
-        className="cursor-grab touch-none text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+        className="cursor-grab touch-none text-[var(--on-surface-faint)] opacity-0 transition-opacity group-hover:opacity-100"
+        aria-label="Drag to reorder"
       >
         <GripVertical className="h-4 w-4" />
       </button>
 
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{block.heading}</p>
-      </div>
+      <span
+        className={cn(
+          "flex-1 min-w-0 truncate capitalize",
+          !block.isVisible && "line-through",
+        )}
+      >
+        {block.heading}
+      </span>
+
+      {itemCount > 0 && (
+        <span className="font-mono text-[10px] text-[var(--on-surface-faint)]">
+          {itemCount.toString().padStart(2, "0")}
+        </span>
+      )}
 
       <button
         onClick={(e) => {
           e.stopPropagation();
           onToggleVisibility(block.id);
         }}
-        className="text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+        aria-label={block.isVisible ? "Hide section" : "Show section"}
+        className={cn(
+          "rounded p-1 text-[var(--on-surface-muted)] transition-all hover:bg-[var(--surface)] hover:text-[var(--on-surface)]",
+          block.isVisible
+            ? "opacity-0 group-hover:opacity-100"
+            : "opacity-100",
+        )}
       >
         {block.isVisible ? (
           <Eye className="h-3.5 w-3.5" />

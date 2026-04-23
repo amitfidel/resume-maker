@@ -66,7 +66,9 @@ export function BlockList({ resumeId, blocks: initialBlocks }: Props) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-medium text-muted-foreground">Sections</h3>
+      <h4 className="mb-2.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--on-surface-muted)]">
+        Sections
+      </h4>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

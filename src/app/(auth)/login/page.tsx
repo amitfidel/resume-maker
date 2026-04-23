@@ -39,15 +39,25 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>Sign in to your Resume Maker account</CardDescription>
+      <Card className="w-full max-w-md rounded-2xl border-0 bg-[var(--surface-raised)] shadow-[var(--sh-3),0_0_0_1px_var(--border-ghost)]">
+        <CardHeader className="items-center space-y-3 pb-4 text-center">
+          <Link href="/" className="inline-flex items-baseline gap-0.5">
+            <span className="font-headline text-[28px] tracking-[-0.02em] text-[var(--on-surface)]">
+              Resumi
+            </span>
+            <span className="ml-1 inline-block h-1.5 w-1.5 self-center rounded-full bg-[var(--magic-2)]" />
+          </Link>
+          <CardTitle className="font-headline text-[28px] font-normal leading-none tracking-[-0.02em]">
+            Welcome <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">back</em>.
+          </CardTitle>
+          <CardDescription className="text-[var(--on-surface-muted)]">
+            Sign in to continue composing.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button
             variant="outline"
-            className="w-full"
+            className="h-11 w-full rounded-full border-0 bg-[var(--surface-raised)] text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong)] hover:-translate-y-px hover:shadow-[inset_0_0_0_1px_var(--ink)]"
             onClick={handleGoogleSignIn}
             disabled={loading}
           >
@@ -103,17 +113,24 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-[var(--destructive)]">{error}</p>
             )}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
+            <Button
+              type="submit"
+              className="magical-gradient magic-shine h-11 w-full rounded-full"
+              disabled={loading}
+            >
+              {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-[var(--on-surface-muted)]">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary underline-offset-4 hover:underline">
+            <Link
+              href="/signup"
+              className="text-[var(--magic-1)] underline-offset-4 hover:underline dark:text-[var(--magic-2)]"
+            >
               Sign up
             </Link>
           </p>

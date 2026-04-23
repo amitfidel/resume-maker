@@ -241,6 +241,48 @@ export async function reorderBlocks(
 }
 
 /**
+ * Reorder items within a block (e.g. reordering education entries).
+ * Takes an ordered list of item IDs and writes their sortOrder to match.
+ */
+export async function reorderItems(
+  resumeId: string,
+  blockId: string,
+  itemIds: string[]
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  // Verify block belongs to this resume
+  const block = await db.query.resumeBlocks.findFirst({
+    where: and(
+      eq(resumeBlocks.id, blockId),
+      eq(resumeBlocks.resumeId, resumeId)
+    ),
+  });
+  if (!block) return;
+
+  await Promise.all(
+    itemIds.map((itemId, index) =>
+      db
+        .update(resumeBlockItems)
+        .set({ sortOrder: index, updatedAt: new Date() })
+        .where(
+          and(
+            eq(resumeBlockItems.id, itemId),
+            eq(resumeBlockItems.blockId, blockId)
+          )
+        )
+    )
+  );
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
  * Toggle block visibility.
  */
 export async function toggleBlockVisibility(

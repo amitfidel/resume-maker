@@ -125,10 +125,10 @@ export function EditableText({
           "outline-none transition-colors",
           // Ensure clickable area even when empty
           "inline-block min-w-[1.5ch]",
-          !editing && !showAi && "cursor-text hover:bg-blue-50 rounded-sm",
-          editing && "bg-blue-50 ring-1 ring-blue-300 rounded-sm px-0.5",
-          hasOverride && !editing && "border-b border-dashed border-amber-400",
-          isEmpty && !editing && "text-gray-300 italic",
+          !editing && !showAi && "cursor-text hover:bg-[color:color-mix(in_oklab,var(--magic-tint)_50%,transparent)] rounded",
+          editing && "bg-[var(--surface)] ring-2 ring-[var(--magic-2)] rounded px-0.5 shadow-[0_4px_14px_-4px_var(--magic-glow)]",
+          hasOverride && !editing && "border-b border-dashed border-[var(--warn)]",
+          isEmpty && !editing && "text-[var(--on-surface-faint)] italic",
           className
         )}
       >
@@ -144,7 +144,7 @@ export function EditableText({
                 e.stopPropagation();
                 setShowAi(true);
               }}
-              className="text-purple-500 hover:text-purple-700"
+              className="text-[var(--magic-2)] hover:text-[var(--magic-1)]"
               title="AI rewrite"
             >
               <Sparkles className="h-3 w-3" />
@@ -153,7 +153,7 @@ export function EditableText({
           {hasOverride && (
             <button
               onClick={handleReset}
-              className="text-amber-500 hover:text-amber-700"
+              className="text-[var(--warn)] hover:text-[var(--warn)]/80"
               title="Reset to profile value"
             >
               <RotateCcw className="h-3 w-3" />

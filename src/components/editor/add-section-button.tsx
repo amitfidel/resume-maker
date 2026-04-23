@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { createPortal } from "react-dom";
-import { useEffect } from "react";
-import { Plus, Briefcase, GraduationCap, Wrench, FolderGit2, Award, FileText } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Plus,
+  BookOpen,
+  Briefcase,
+  GraduationCap,
+  Wrench,
+  FolderGit2,
+  Award,
+  FileText,
+  Sparkles,
+  Check,
+} from "lucide-react";
 import {
   addStandardSection,
   addCustomSection,
@@ -13,15 +23,52 @@ import type { BlockType } from "@/lib/resume/types";
 type SectionOption = {
   type: BlockType;
   label: string;
+  hint: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
+/**
+ * Suggested sections, in the order a resume typically reads. The editor
+ * surfaces the *missing* ones at the top, then shows already-added ones
+ * greyed out below. Header/Personal Details is always present.
+ */
 const SECTION_OPTIONS: SectionOption[] = [
-  { type: "experience", label: "Work Experience", icon: Briefcase },
-  { type: "education", label: "Education", icon: GraduationCap },
-  { type: "skills", label: "Skills", icon: Wrench },
-  { type: "projects", label: "Projects", icon: FolderGit2 },
-  { type: "certifications", label: "Certifications", icon: Award },
+  {
+    type: "summary",
+    label: "Profile summary",
+    hint: "A short positioning paragraph",
+    icon: BookOpen,
+  },
+  {
+    type: "experience",
+    label: "Work experience",
+    hint: "Roles, companies, impact",
+    icon: Briefcase,
+  },
+  {
+    type: "education",
+    label: "Education",
+    hint: "Schools, degrees, coursework",
+    icon: GraduationCap,
+  },
+  {
+    type: "skills",
+    label: "Skills",
+    hint: "Tools, languages, methods",
+    icon: Wrench,
+  },
+  {
+    type: "projects",
+    label: "Projects",
+    hint: "Side builds, open source, portfolio",
+    icon: FolderGit2,
+  },
+  {
+    type: "certifications",
+    label: "Certifications",
+    hint: "Credentials and licenses",
+    icon: Award,
+  },
 ];
 
 type Props = {
@@ -30,150 +77,173 @@ type Props = {
 };
 
 export function AddSectionButton({ resumeId, existingBlockTypes }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [customHeading, setCustomHeading] = useState("");
-  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [isPending, start] = useTransition();
+  const panelRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const [pos, setPos] = useState({ top: 0, left: 0 });
 
-  useEffect(() => {
-    if (open && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      setPos({ top: rect.bottom + 4, left: rect.left });
+  const missing = SECTION_OPTIONS.filter((o) => !existingBlockTypes.includes(o.type));
+  const added = SECTION_OPTIONS.filter((o) => existingBlockTypes.includes(o.type));
+
+  const runAction = (fn: () => Promise<void>) => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("resumi:save-start"));
     }
-  }, [open]);
-
-  const handleAdd = (type: BlockType) => {
-    addStandardSection(resumeId, type);
-    setOpen(false);
-    setShowCustomInput(false);
+    start(async () => {
+      try {
+        await fn();
+        router.refresh();
+        setOpen(false);
+        setCustomHeading("");
+      } finally {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("resumi:save-end"));
+        }
+      }
+    });
   };
 
-  const handleAddCustom = () => {
-    if (customHeading.trim()) {
-      addCustomSection(resumeId, customHeading.trim());
-      setCustomHeading("");
-      setShowCustomInput(false);
-      setOpen(false);
-    }
-  };
-
-  // Close on outside click
+  // Close on outside click / Escape
   useEffect(() => {
     if (!open) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
+    const onClick = (e: MouseEvent) => {
+      const t = e.target as Node;
       if (
+        panelRef.current &&
+        !panelRef.current.contains(t) &&
         buttonRef.current &&
-        !buttonRef.current.contains(target) &&
-        !(target as HTMLElement).closest?.("[data-section-picker]")
+        !buttonRef.current.contains(t)
       ) {
         setOpen(false);
-        setShowCustomInput(false);
       }
     };
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", handleClick);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    const t = setTimeout(() => {
+      document.addEventListener("mousedown", onClick);
+      document.addEventListener("keydown", onKey);
     }, 10);
     return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", handleClick);
+      clearTimeout(t);
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
     };
   }, [open]);
 
   return (
-    <>
+    <div className="relative">
       <button
         ref={buttonRef}
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-[var(--on-surface-variant)] hover:bg-[var(--surface-container)] hover:text-[var(--on-surface)] transition-colors w-full"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-center gap-1.5 rounded-full bg-[var(--surface-sunk)] px-4 py-2.5 text-[13px] font-medium text-[var(--on-surface-soft)] transition-colors hover:bg-[var(--magic-tint)] hover:text-[var(--magic-1)]"
       >
         <Plus className="h-3.5 w-3.5" />
-        Add Section
+        Add section
       </button>
 
-      {open && typeof document !== "undefined" && createPortal(
+      {open && (
         <div
-          data-section-picker
-          style={{ position: "fixed", top: pos.top, left: pos.left, zIndex: 9999 }}
-          className="w-60 rounded-lg bg-white p-2 shadow-ambient border-ghost"
+          ref={panelRef}
+          className="absolute left-0 right-0 top-full z-30 mt-2 rounded-[16px] bg-[var(--surface-raised)] p-2 shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]"
+          style={{ animation: "section-pop 200ms var(--ease-spring)" }}
         >
-          {!showCustomInput ? (
-            <div className="space-y-0.5">
-              <p className="px-2 py-1 text-[0.65rem] uppercase tracking-wider font-semibold text-gray-400">
-                Standard sections
+          <style>{`
+            @keyframes section-pop {
+              from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+          `}</style>
+
+          {missing.length > 0 && (
+            <>
+              <p className="flex items-center gap-1.5 px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+                <Sparkles className="h-3 w-3" />
+                Suggested — add what&apos;s missing
               </p>
-              {SECTION_OPTIONS.map((opt) => {
-                const existing = existingBlockTypes.includes(opt.type);
-                return (
+              <div className="space-y-0.5 pb-1">
+                {missing.map((opt) => (
                   <button
                     key={opt.type}
-                    onClick={() => handleAdd(opt.type)}
-                    disabled={existing}
-                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors ${
-                      existing
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-700 hover:bg-gray-100"
-                    }`}
+                    onClick={() => runAction(() => addStandardSection(resumeId, opt.type))}
+                    disabled={isPending}
+                    className="flex w-full items-start gap-3 rounded-[10px] px-3 py-2.5 text-left transition-colors hover:bg-[var(--surface-sunk)] disabled:opacity-50"
                   >
-                    <opt.icon className="h-3.5 w-3.5" />
-                    {opt.label}
-                    {existing && <span className="ml-auto text-[0.65rem]">added</span>}
+                    <span className="mt-0.5 grid h-8 w-8 flex-none place-items-center rounded-[8px] bg-[var(--magic-tint)] text-[var(--magic-1)]">
+                      <opt.icon className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">
+                      <span className="block text-[13px] font-medium text-[var(--on-surface)]">
+                        {opt.label}
+                      </span>
+                      <span className="block text-[11px] text-[var(--on-surface-muted)]">
+                        {opt.hint}
+                      </span>
+                    </span>
                   </button>
-                );
-              })}
-              <div className="my-1 border-t border-gray-100" />
-              <button
-                onClick={() => setShowCustomInput(true)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <FileText className="h-3.5 w-3.5" />
-                Custom Section
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <p className="px-2 pt-1 text-[0.65rem] uppercase tracking-wider font-semibold text-gray-400">
-                Section name
+                ))}
+              </div>
+            </>
+          )}
+
+          {added.length > 0 && (
+            <>
+              <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+                Already in your resume
               </p>
+              <div className="space-y-0.5 pb-1">
+                {added.map((opt) => (
+                  <div
+                    key={opt.type}
+                    className="flex items-center gap-3 rounded-[10px] px-3 py-2 text-[var(--on-surface-faint)]"
+                  >
+                    <span className="grid h-7 w-7 flex-none place-items-center rounded-[8px] bg-[var(--surface-sunk)]">
+                      <opt.icon className="h-3 w-3" />
+                    </span>
+                    <span className="flex-1 text-[12px]">{opt.label}</span>
+                    <Check className="h-3 w-3 text-[var(--success)]" />
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Custom section */}
+          <div className="mt-1 rounded-[10px] bg-[var(--surface-sunk)] p-3">
+            <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+              <FileText className="h-3 w-3" />
+              Custom section
+            </p>
+            <div className="flex gap-1.5">
               <input
                 type="text"
                 value={customHeading}
                 onChange={(e) => setCustomHeading(e.target.value)}
+                placeholder="e.g. Awards, Volunteering, Languages"
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleAddCustom();
-                  if (e.key === "Escape") {
-                    setShowCustomInput(false);
-                    setCustomHeading("");
+                  if (e.key === "Enter" && customHeading.trim()) {
+                    e.preventDefault();
+                    runAction(() => addCustomSection(resumeId, customHeading.trim()));
                   }
                 }}
-                autoFocus
-                placeholder="e.g. Awards, Volunteering"
-                className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="flex-1 rounded-[8px] bg-[var(--surface-raised)] px-3 py-2 text-[13px] outline-none shadow-[inset_0_0_0_1px_var(--border-ghost)] placeholder:text-[var(--on-surface-faint)] focus:shadow-[inset_0_0_0_2px_var(--magic-2)]"
               />
-              <div className="flex gap-1">
-                <button
-                  onClick={handleAddCustom}
-                  disabled={!customHeading.trim()}
-                  className="flex-1 rounded-md bg-[#182034] px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
-                >
-                  Add
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCustomInput(false);
-                    setCustomHeading("");
-                  }}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-              </div>
+              <button
+                onClick={() =>
+                  customHeading.trim() &&
+                  runAction(() => addCustomSection(resumeId, customHeading.trim()))
+                }
+                disabled={!customHeading.trim() || isPending}
+                className="rounded-[8px] bg-[var(--ink)] px-4 py-2 text-[13px] font-medium text-[var(--cream)] transition-opacity disabled:opacity-40"
+              >
+                Add
+              </button>
             </div>
-          )}
-        </div>,
-        document.body
+          </div>
+        </div>
       )}
-    </>
+    </div>
   );
 }

@@ -4,16 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Download, Sparkles, Target, MessageCircle } from "lucide-react";
-import { BlockList } from "./block-list";
-import { TemplatePicker } from "./template-picker";
+import { ContentEditor } from "./content-editor";
+import { TemplateDialog } from "./template-dialog";
 import { ResumePreview } from "./resume-preview";
+import { ResumeStateProvider } from "./resume-state";
 import { AiReviewPanel } from "./ai-review-panel";
 import { JobTailorPanel } from "./job-tailor-panel";
 import { AiChatPanel } from "./ai-chat-panel";
 import { VersionHistory } from "./version-history";
 import { SaveVersionButton } from "./save-version-button";
+import { SaveIndicator } from "./save-indicator";
 import { TemplateRenderer } from "@/templates/renderer";
 import type { ResolvedResume } from "@/lib/resume/types";
 
@@ -37,27 +38,33 @@ export function EditorShell({ resume }: Props) {
   const showSidebars = activeTab === "editor";
 
   return (
+    <ResumeStateProvider initialResume={resume}>
     <div className="flex h-[calc(100vh-0px)] flex-col bg-[var(--surface)]">
       {/* Editor toolbar - glass effect */}
-      <div className="glass-effect flex items-center justify-between border-b border-ghost px-4 py-2.5 z-10">
-        <div className="flex items-center gap-4">
+      <div className="glass-effect sticky top-0 z-10 flex h-14 items-center justify-between border-b border-[var(--border-ghost)] px-5">
+        <div className="flex min-w-0 items-center gap-3.5">
           <Link href="/resumes">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--on-surface-variant)]">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-[10px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="font-headline text-base font-bold text-[var(--on-surface)]">
+          <h1 className="font-headline rounded-md px-2 py-1 text-[18px] tracking-[-0.01em] text-[var(--on-surface)] transition-colors hover:bg-[var(--surface-sunk)]">
             {resume.title}
           </h1>
-          <div className="flex items-center gap-1 ml-2 rounded-lg bg-[var(--surface-container-low)] p-0.5">
+          <SaveIndicator />
+          <div className="ml-2 inline-flex rounded-full bg-[var(--surface-sunk)] p-[3px]">
             {(["editor", "preview", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-all capitalize ${
+                className={`rounded-full px-4 py-1.5 text-[13px] font-medium capitalize transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] ${
                   activeTab === tab
-                    ? "bg-white text-[var(--on-surface)] shadow-sm"
-                    : "text-[var(--on-surface-variant)] hover:text-[var(--on-surface)]"
+                    ? "bg-[var(--surface-raised)] text-[var(--on-surface)] shadow-[var(--sh-1)]"
+                    : "text-[var(--on-surface-muted)] hover:text-[var(--on-surface-soft)]"
                 }`}
               >
                 {tab}
@@ -68,40 +75,52 @@ export function EditorShell({ resume }: Props) {
         <div className="flex items-center gap-2">
           {showSidebars && (
             <>
+              <TemplateDialog resumeId={resume.id} currentTemplateId={resume.templateId} />
               <SaveVersionButton resumeId={resume.id} />
               <Button
                 size="sm"
                 onClick={() => togglePanel("ai-chat")}
                 className={rightPanel === "ai-chat"
-                  ? "magical-surface text-white gap-2"
-                  : "magical-gradient text-white gap-2"
+                  ? "magical-surface gap-2 rounded-full"
+                  : "magical-gradient magic-shine gap-2 rounded-full"
                 }
               >
                 <MessageCircle className="h-4 w-4" />
                 AI Chat
               </Button>
               <Button
-                variant={rightPanel === "job-tailor" ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
                 onClick={() => togglePanel("job-tailor")}
-                className={rightPanel === "job-tailor" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
+                className={
+                  rightPanel === "job-tailor"
+                    ? "magical-gradient gap-2 rounded-full"
+                    : "h-9 gap-1.5 rounded-full text-[13px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+                }
               >
-                <Target className="mr-2 h-4 w-4" />
-                Job Tailor
+                <Target className="h-3.5 w-3.5" />
+                Tailor
               </Button>
               <Button
-                variant={rightPanel === "ai-review" ? "default" : "ghost"}
+                variant="ghost"
                 size="sm"
                 onClick={() => togglePanel("ai-review")}
-                className={rightPanel === "ai-review" ? "magical-gradient text-white" : "text-[var(--on-surface-variant)]"}
+                className={
+                  rightPanel === "ai-review"
+                    ? "magical-gradient gap-2 rounded-full"
+                    : "h-9 gap-1.5 rounded-full text-[13px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+                }
               >
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Sparkles className="h-3.5 w-3.5" />
                 Review
               </Button>
             </>
           )}
           <a href={`/api/pdf/${resume.id}`} download>
-            <Button size="sm" className="bg-[var(--on-surface)] text-white hover:bg-[var(--on-surface)]/90 gap-2">
+            <Button
+              size="sm"
+              className="magic-shine h-9 gap-2 rounded-full bg-[var(--ink)] px-4 text-[var(--cream)] hover:-translate-y-px hover:bg-[var(--ink)]"
+            >
               Export
               <Download className="h-3.5 w-3.5" />
             </Button>
@@ -113,17 +132,13 @@ export function EditorShell({ resume }: Props) {
       <div className="flex flex-1 overflow-hidden">
         {activeTab === "editor" && (
           <>
-            {/* Left sidebar - sections + template */}
-            <aside className="w-64 shrink-0 overflow-y-auto bg-[var(--surface-container-lowest)] p-5 space-y-6">
-              <BlockList resumeId={resume.id} blocks={resume.blocks} />
-              <Separator className="bg-[var(--surface-container-high)]" />
-              <TemplatePicker resumeId={resume.id} currentTemplateId={resume.templateId} />
-            </aside>
+            {/* Left — form-style content editor */}
+            <ContentEditor />
 
-            {/* Center - interactive resume canvas */}
-            <main className="flex-1 overflow-y-auto bg-[var(--surface-container)] p-8">
+            {/* Center — live resume canvas (still inline-editable) */}
+            <main className="flex-1 overflow-y-auto bg-[var(--surface-sunk)] p-8">
               <div className="mx-auto max-w-[820px]">
-                <ResumePreview resume={resume} />
+                <ResumePreview />
               </div>
             </main>
 
@@ -175,5 +190,6 @@ export function EditorShell({ resume }: Props) {
         )}
       </div>
     </div>
+    </ResumeStateProvider>
   );
 }
