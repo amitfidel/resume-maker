@@ -4,13 +4,6 @@ import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, Loader2, Check, AlertCircle } from "lucide-react";
 import { saveImportedProfile } from "./actions";
@@ -164,164 +157,175 @@ export default function ImportPage() {
       </div>
 
       {!parsed ? (
-        <Tabs defaultValue="paste">
-          <TabsList>
-            <TabsTrigger value="paste">Paste Text</TabsTrigger>
-            <TabsTrigger value="upload">Upload PDF</TabsTrigger>
+        <Tabs defaultValue="paste" className="space-y-4">
+          <TabsList className="rounded-full bg-[var(--surface-sunk)] p-[3px]">
+            <TabsTrigger
+              value="paste"
+              className="rounded-full px-4 py-1.5 text-[13px] font-medium text-[var(--on-surface-muted)] data-[state=active]:bg-[var(--surface-raised)] data-[state=active]:text-[var(--on-surface)] data-[state=active]:shadow-[var(--sh-1)]"
+            >
+              Paste text
+            </TabsTrigger>
+            <TabsTrigger
+              value="upload"
+              className="rounded-full px-4 py-1.5 text-[13px] font-medium text-[var(--on-surface-muted)] data-[state=active]:bg-[var(--surface-raised)] data-[state=active]:text-[var(--on-surface)] data-[state=active]:shadow-[var(--sh-1)]"
+            >
+              Upload PDF
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="paste" className="space-y-4">
             <Textarea
-              placeholder="Paste your resume text here..."
-              rows={12}
+              placeholder="Paste your resume text here…"
+              rows={14}
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
+              className="resumi-input"
             />
-            <Button onClick={handlePasteSubmit} disabled={isLoading || !pasteText.trim()}>
+            <Button
+              onClick={handlePasteSubmit}
+              disabled={isLoading || !pasteText.trim()}
+              className="magical-gradient magic-shine h-11 rounded-full px-5"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Parsing...
+                  Parsing…
                 </>
               ) : (
                 <>
                   <FileText className="mr-2 h-4 w-4" />
-                  Parse Resume
+                  Parse resume
                 </>
               )}
             </Button>
           </TabsContent>
 
           <TabsContent value="upload" className="space-y-4">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Upload className="mb-4 h-12 w-12 text-muted-foreground/50" />
-                <p className="mb-4 text-sm text-muted-foreground">
-                  Upload a PDF resume file
-                </p>
-                <Input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  disabled={isLoading}
-                  className="max-w-xs"
-                />
-                {isLoading && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Parsing PDF...
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="resumi-card flex flex-col items-center justify-center py-14">
+              <div className="mb-4 grid h-14 w-14 place-items-center rounded-[14px] bg-[var(--surface-sunk)]">
+                <Upload className="h-6 w-6 text-[var(--on-surface-muted)]" />
+              </div>
+              <p className="mb-4 text-sm text-[var(--on-surface-muted)]">
+                Upload a PDF resume file
+              </p>
+              <Input
+                type="file"
+                accept=".pdf"
+                onChange={handleFileUpload}
+                disabled={isLoading}
+                className="resumi-input max-w-xs"
+              />
+              {isLoading && (
+                <div className="font-mono mt-4 flex items-center gap-2 rounded-[10px] bg-[var(--surface-sunk)] px-3 py-2 text-[12px] text-[var(--on-surface-soft)]">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Parsing PDF…
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       ) : (
         <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Parsed Results</CardTitle>
-              <CardDescription>
-                Review the extracted data before saving to your profile.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="resumi-card p-6">
+            <h2 className="font-headline text-[24px] font-normal tracking-[-0.01em]">
+              Parsed <em className="serif-ital">results</em>
+            </h2>
+            <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
+              Review the extracted data before saving to your profile.
+            </p>
+            <div className="mt-5 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm font-medium">Name</p>
-                  <p className="text-sm text-muted-foreground">
-                    {parsed.fullName || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Headline</p>
-                  <p className="text-sm text-muted-foreground">
-                    {parsed.headline || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Email</p>
-                  <p className="text-sm text-muted-foreground">
-                    {parsed.email || "—"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium">Location</p>
-                  <p className="text-sm text-muted-foreground">
-                    {parsed.location || "—"}
-                  </p>
-                </div>
+                <ParsedField label="Name" value={parsed.fullName} />
+                <ParsedField label="Headline" value={parsed.headline} />
+                <ParsedField label="Email" value={parsed.email} />
+                <ParsedField label="Location" value={parsed.location} />
               </div>
 
-              {parsed.summary && (
-                <div>
-                  <p className="text-sm font-medium">Summary</p>
-                  <p className="text-sm text-muted-foreground">
-                    {parsed.summary}
-                  </p>
-                </div>
-              )}
+              {parsed.summary && <ParsedField label="Summary" value={parsed.summary} />}
 
               <div>
-                <p className="text-sm font-medium">
-                  Work Experience ({parsed.workExperiences.length})
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+                  Work experience ({parsed.workExperiences.length})
                 </p>
-                {parsed.workExperiences.map((exp, i) => (
-                  <p key={i} className="text-sm text-muted-foreground">
-                    {exp.title} at {exp.company}
-                  </p>
-                ))}
+                <div className="mt-1.5 space-y-0.5">
+                  {parsed.workExperiences.map((exp, i) => (
+                    <p key={i} className="text-sm text-[var(--on-surface-soft)]">
+                      {exp.title} <span className="text-[var(--on-surface-muted)]">· {exp.company}</span>
+                    </p>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
                   Education ({parsed.education.length})
                 </p>
-                {parsed.education.map((edu, i) => (
-                  <p key={i} className="text-sm text-muted-foreground">
-                    {edu.degree} — {edu.institution}
-                  </p>
-                ))}
+                <div className="mt-1.5 space-y-0.5">
+                  {parsed.education.map((edu, i) => (
+                    <p key={i} className="text-sm text-[var(--on-surface-soft)]">
+                      {edu.degree} <span className="text-[var(--on-surface-muted)]">— {edu.institution}</span>
+                    </p>
+                  ))}
+                </div>
               </div>
 
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
                   Skills ({parsed.skills.length})
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {parsed.skills.map((s) => s.name).join(", ") || "—"}
+                <p className="mt-1.5 text-sm text-[var(--on-surface-soft)]">
+                  {parsed.skills.map((s) => s.name).join(" · ") || "—"}
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <div className="flex gap-3">
-            <Button onClick={handleSave} disabled={isLoading}>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="magical-gradient magic-shine h-11 rounded-full px-5"
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  Saving…
                 </>
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Save to Profile
+                  Save to profile
                 </>
               )}
             </Button>
-            <Button variant="outline" onClick={() => setParsed(null)}>
-              Start Over
+            <Button
+              variant="outline"
+              onClick={() => setParsed(null)}
+              className="h-11 rounded-full border-0 bg-[var(--surface-raised)] px-5 text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
+            >
+              Start over
             </Button>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center gap-2 text-sm text-destructive">
+        <div className="inline-flex items-center gap-2 rounded-[10px] bg-[color:color-mix(in_oklab,var(--destructive)_12%,transparent)] px-3 py-2 text-sm text-[var(--destructive)]">
           <AlertCircle className="h-4 w-4" />
           {error}
         </div>
       )}
+    </div>
+  );
+}
+
+function ParsedField({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+        {label}
+      </p>
+      <p className="mt-1 text-sm text-[var(--on-surface)]">{value || "—"}</p>
     </div>
   );
 }

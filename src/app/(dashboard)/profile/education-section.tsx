@@ -6,29 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, GraduationCap } from "lucide-react";
 import { createEducation, deleteEducation } from "./actions";
 import type { Education } from "@/db/schema";
 
-export function EducationSection({
-  education,
-}: {
-  education: Education[];
-}) {
+export function EducationSection({ education }: { education: Education[] }) {
   const [open, setOpen] = useState(false);
 
   async function handleCreate(formData: FormData) {
@@ -37,63 +25,92 @@ export function EducationSection({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Education</h2>
-          <p className="text-sm text-muted-foreground">
-            Your educational background.
+          <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
+            <em className="serif-ital">Education</em>
+          </h2>
+          <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
+            Schools, degrees, and coursework.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button size="sm" />}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Education
+          <DialogTrigger
+            render={
+              <Button
+                size="sm"
+                className="magical-gradient magic-shine h-9 rounded-full px-4"
+              />
+            }
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add education
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
-              <DialogTitle>Add Education</DialogTitle>
+              <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
+                Add <em className="serif-ital">education</em>
+              </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="institution">Institution</Label>
-                <Input id="institution" name="institution" required />
+              <div className="space-y-1.5">
+                <Label htmlFor="institution" className="text-xs text-[var(--on-surface-muted)]">
+                  Institution
+                </Label>
+                <Input id="institution" name="institution" required className="resumi-input" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="degree">Degree</Label>
-                  <Input id="degree" name="degree" placeholder="B.S." required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="degree" className="text-xs text-[var(--on-surface-muted)]">
+                    Degree
+                  </Label>
+                  <Input id="degree" name="degree" placeholder="B.S." required className="resumi-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fieldOfStudy">Field of Study</Label>
-                  <Input id="fieldOfStudy" name="fieldOfStudy" placeholder="Computer Science" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="fieldOfStudy" className="text-xs text-[var(--on-surface-muted)]">
+                    Field of study
+                  </Label>
+                  <Input id="fieldOfStudy" name="fieldOfStudy" placeholder="Computer Science" className="resumi-input" />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input id="startDate" name="startDate" type="date" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="startDate" className="text-xs text-[var(--on-surface-muted)]">
+                    Start date
+                  </Label>
+                  <Input id="startDate" name="startDate" type="month" className="resumi-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input id="endDate" name="endDate" type="date" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="endDate" className="text-xs text-[var(--on-surface-muted)]">
+                    End date
+                  </Label>
+                  <Input id="endDate" name="endDate" type="month" className="resumi-input" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="gpa">GPA (optional)</Label>
-                <Input id="gpa" name="gpa" placeholder="3.8/4.0" />
+              <div className="space-y-1.5">
+                <Label htmlFor="gpa" className="text-xs text-[var(--on-surface-muted)]">
+                  GPA (optional)
+                </Label>
+                <Input id="gpa" name="gpa" placeholder="3.8/4.0" className="resumi-input" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description (optional)</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="description" className="text-xs text-[var(--on-surface-muted)]">
+                  Notes (optional)
+                </Label>
                 <Textarea
                   id="description"
                   name="description"
                   rows={3}
-                  placeholder="Relevant coursework, honors, activities..."
+                  placeholder="Relevant coursework, honors, activities…"
+                  className="resumi-input"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Add Education
+              <Button
+                type="submit"
+                className="magical-gradient magic-shine h-11 w-full rounded-full"
+              >
+                Add education
               </Button>
             </form>
           </DialogContent>
@@ -101,42 +118,52 @@ export function EducationSection({
       </div>
 
       {education.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <GraduationCap className="mb-4 h-12 w-12 text-muted-foreground/50" />
-            <p className="text-muted-foreground">No education added yet.</p>
-          </CardContent>
-        </Card>
+        <div className="resumi-card flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
+            <GraduationCap className="h-5 w-5 text-[var(--on-surface-muted)]" />
+          </div>
+          <p className="text-[var(--on-surface-muted)]">No education added yet.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {education.map((ed) => (
-            <Card key={ed.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">
-                      {ed.degree}
-                      {ed.fieldOfStudy && ` in ${ed.fieldOfStudy}`}
-                    </CardTitle>
-                    <CardDescription>{ed.institution}</CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {ed.endDate && <Badge variant="outline">{ed.endDate}</Badge>}
-                    {ed.gpa && <Badge variant="secondary">GPA: {ed.gpa}</Badge>}
-                    <form action={() => deleteEducation(ed.id)}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </form>
-                  </div>
+            <div key={ed.id} className="resumi-card p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-medium text-[var(--on-surface)]">
+                    {ed.degree}
+                    {ed.fieldOfStudy && ` in ${ed.fieldOfStudy}`}
+                  </h3>
+                  <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
+                    {ed.institution}
+                  </p>
                 </div>
-              </CardHeader>
+                <div className="flex items-center gap-2">
+                  {ed.endDate && (
+                    <span className="font-mono rounded-full bg-[var(--surface-sunk)] px-2.5 py-1 text-[11px] text-[var(--on-surface-soft)]">
+                      {ed.endDate}
+                    </span>
+                  )}
+                  {ed.gpa && (
+                    <span className="rounded-full bg-[var(--magic-tint)] px-2.5 py-1 text-[11px] text-[var(--magic-1)]">
+                      GPA {ed.gpa}
+                    </span>
+                  )}
+                  <form action={() => deleteEducation(ed.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-[8px] text-[var(--on-surface-muted)] hover:bg-[var(--surface-sunk)] hover:text-[var(--destructive)]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </form>
+                </div>
+              </div>
               {ed.description && (
-                <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground">{ed.description}</p>
-                </CardContent>
+                <p className="mt-3 text-sm text-[var(--on-surface-soft)]">{ed.description}</p>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}

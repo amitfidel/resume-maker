@@ -6,25 +6,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Building2 } from "lucide-react";
-import {
-  createWorkExperience,
-  deleteWorkExperience,
-} from "./actions";
+import { createWorkExperience, deleteWorkExperience } from "./actions";
 import type { WorkExperience, ExperienceBullet } from "@/db/schema";
 
 type ExperienceWithBullets = WorkExperience & {
@@ -44,61 +33,86 @@ export function ExperienceSection({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold">Work Experience</h2>
-          <p className="text-sm text-muted-foreground">
-            Add your work history. Each entry can have bullet points.
+          <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
+            Work <em className="serif-ital">experience</em>
+          </h2>
+          <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
+            Roles you&apos;ve held. Add bullets for each — the AI can sharpen them later.
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger render={<Button size="sm" />}>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Experience
+          <DialogTrigger
+            render={
+              <Button
+                size="sm"
+                className="magical-gradient magic-shine h-9 rounded-full px-4"
+              />
+            }
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add experience
           </DialogTrigger>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
-              <DialogTitle>Add Work Experience</DialogTitle>
+              <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
+                Add <em className="serif-ital">experience</em>
+              </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input id="company" name="company" required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="company" className="text-xs text-[var(--on-surface-muted)]">
+                    Company
+                  </Label>
+                  <Input id="company" name="company" required className="resumi-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="title">Job Title</Label>
-                  <Input id="title" name="title" required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-xs text-[var(--on-surface-muted)]">
+                    Job title
+                  </Label>
+                  <Input id="title" name="title" required className="resumi-input" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
-                <Input id="location" name="location" placeholder="City, State" />
+              <div className="space-y-1.5">
+                <Label htmlFor="location" className="text-xs text-[var(--on-surface-muted)]">
+                  Location
+                </Label>
+                <Input id="location" name="location" placeholder="City, State" className="resumi-input" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input id="startDate" name="startDate" type="date" required />
+                <div className="space-y-1.5">
+                  <Label htmlFor="startDate" className="text-xs text-[var(--on-surface-muted)]">
+                    Start date
+                  </Label>
+                  <Input id="startDate" name="startDate" type="month" required className="resumi-input" />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input id="endDate" name="endDate" type="date" />
+                <div className="space-y-1.5">
+                  <Label htmlFor="endDate" className="text-xs text-[var(--on-surface-muted)]">
+                    End date
+                  </Label>
+                  <Input id="endDate" name="endDate" type="month" className="resumi-input" />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bullets">
-                  Bullet Points (one per line)
+              <div className="space-y-1.5">
+                <Label htmlFor="bullets" className="text-xs text-[var(--on-surface-muted)]">
+                  Bullet points (one per line)
                 </Label>
                 <Textarea
                   id="bullets"
                   name="bullets"
                   rows={5}
-                  placeholder={"Led development of...\nIncreased revenue by...\nManaged a team of..."}
+                  placeholder={"Led development of…\nIncreased revenue by…\nManaged a team of…"}
+                  className="resumi-input"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                Add Experience
+              <Button
+                type="submit"
+                className="magical-gradient magic-shine h-11 w-full rounded-full"
+              >
+                Add experience
               </Button>
             </form>
           </DialogContent>
@@ -106,47 +120,47 @@ export function ExperienceSection({
       </div>
 
       {experiences.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Building2 className="mb-4 h-12 w-12 text-muted-foreground/50" />
-            <p className="text-muted-foreground">No work experience added yet.</p>
-          </CardContent>
-        </Card>
+        <div className="resumi-card flex flex-col items-center justify-center py-12 text-center">
+          <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
+            <Building2 className="h-5 w-5 text-[var(--on-surface-muted)]" />
+          </div>
+          <p className="text-[var(--on-surface-muted)]">No work experience added yet.</p>
+        </div>
       ) : (
         <div className="space-y-3">
           {experiences.map((exp) => (
-            <Card key={exp.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-base">{exp.title}</CardTitle>
-                    <CardDescription>
-                      {exp.company}
-                      {exp.location && ` - ${exp.location}`}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      {exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}
-                    </Badge>
-                    <form action={() => deleteWorkExperience(exp.id)}>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </form>
-                  </div>
+            <div key={exp.id} className="resumi-card overflow-hidden p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-medium text-[var(--on-surface)]">{exp.title}</h3>
+                  <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
+                    {exp.company}
+                    {exp.location && ` · ${exp.location}`}
+                  </p>
                 </div>
-              </CardHeader>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono rounded-full bg-[var(--surface-sunk)] px-2.5 py-1 text-[11px] text-[var(--on-surface-soft)]">
+                    {exp.startDate} — {exp.isCurrent ? "Present" : exp.endDate}
+                  </span>
+                  <form action={() => deleteWorkExperience(exp.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-[8px] text-[var(--on-surface-muted)] hover:bg-[var(--surface-sunk)] hover:text-[var(--destructive)]"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </form>
+                </div>
+              </div>
               {exp.bullets.length > 0 && (
-                <CardContent className="pt-0">
-                  <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                    {exp.bullets.map((bullet) => (
-                      <li key={bullet.id}>{bullet.text}</li>
-                    ))}
-                  </ul>
-                </CardContent>
+                <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-[var(--on-surface-soft)]">
+                  {exp.bullets.map((bullet) => (
+                    <li key={bullet.id}>{bullet.text}</li>
+                  ))}
+                </ul>
               )}
-            </Card>
+            </div>
           ))}
         </div>
       )}

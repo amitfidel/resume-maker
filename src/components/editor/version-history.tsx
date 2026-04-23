@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   const [resolvedPreview, setResolvedPreview] = useState<ResolvedResume | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const confirm = useConfirm();
 
   const loadVersions = useCallback(async () => {
     const v = await getResumeVersions(resumeId);
@@ -69,13 +71,14 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   }, [previewVersion, resumeId]);
 
   const handleRestore = useCallback(
-    (versionId: string, versionNumber: number) => {
-      if (
-        !confirm(
-          `Restore version ${versionNumber}? Your current state will be auto-saved as a new version first.`
-        )
-      )
-        return;
+    async (versionId: string, versionNumber: number) => {
+      const ok = await confirm({
+        title: `Restore version ${versionNumber}?`,
+        description:
+          "Your current state is auto-saved as a new version first. You can always undo.",
+        confirmLabel: "Restore",
+      });
+      if (!ok) return;
 
       startTransition(async () => {
         const result = await restoreResumeVersion(resumeId, versionId);
@@ -87,20 +90,25 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
         }
       });
     },
-    [resumeId, loadVersions, onRestoreComplete]
+    [resumeId, loadVersions, onRestoreComplete, confirm]
   );
 
   const handleDelete = useCallback(
-    (versionId: string, versionNumber: number) => {
-      if (!confirm(`Delete version ${versionNumber}? This cannot be undone.`))
-        return;
+    async (versionId: string, versionNumber: number) => {
+      const ok = await confirm({
+        title: `Delete version ${versionNumber}?`,
+        description: "This version is gone for good.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
 
       startTransition(async () => {
         await deleteResumeVersion(resumeId, versionId);
         await loadVersions();
       });
     },
-    [resumeId, loadVersions]
+    [resumeId, loadVersions, confirm]
   );
 
   if (versions === null) {
@@ -114,10 +122,12 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   if (versions.length === 0) {
     return (
       <div className="mx-auto max-w-[600px] text-center">
-        <div className="rounded-lg bg-white p-12 shadow-ambient">
-          <History className="mx-auto mb-4 h-12 w-12 text-[var(--on-surface-variant)] opacity-40" />
-          <h2 className="font-headline text-xl font-bold text-[var(--on-surface)]">
-            No versions saved yet
+        <div className="resumi-card p-12">
+          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-[14px] bg-[var(--surface-sunk)]">
+            <History className="h-6 w-6 text-[var(--on-surface-muted)]" />
+          </div>
+          <h2 className="font-headline text-[24px] font-normal tracking-[-0.015em] text-[var(--on-surface)]">
+            No versions <em className="serif-ital">yet</em>
           </h2>
           <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
             Click{" "}
@@ -247,7 +257,7 @@ function VersionCard({
   const isAi = version.createdBy === "ai_tailoring";
 
   return (
-    <div className="rounded-lg bg-white p-4 shadow-ambient transition-all hover:shadow-md">
+    <div className="resumi-card p-4 transition-all hover:shadow-[var(--sh-3)]">
       <div className="flex items-start gap-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--surface-container)]">
           <span className="font-headline text-sm font-bold text-[var(--on-surface)]">

@@ -719,6 +719,95 @@ export async function addBulletToItem(
 }
 
 /**
+ * Delete a bullet from the underlying profile item. Affects all resumes that
+ * surface this bullet (matches the override model: the profile is source of
+ * truth, resumes override). For this-resume-only hiding, use hideBullet via
+ * the chat tool instead.
+ */
+export async function deleteBullet(
+  resumeId: string,
+  itemId: string,
+  bulletId: string
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const item = await db.query.resumeBlockItems.findFirst({
+    where: eq(resumeBlockItems.id, itemId),
+  });
+  if (!item) return;
+
+  if (item.sourceType === "work_experience") {
+    await db
+      .delete(experienceBullets)
+      .where(eq(experienceBullets.id, bulletId));
+  } else if (item.sourceType === "project") {
+    await db.delete(projectBullets).where(eq(projectBullets.id, bulletId));
+  }
+
+  // Clean up any override row pointing to this bullet
+  const overrides = (item.overrides ?? {}) as Record<string, unknown>;
+  const bullets = (overrides.bullets ?? {}) as Record<string, unknown>;
+  if (bullets[bulletId]) {
+    delete bullets[bulletId];
+    await db
+      .update(resumeBlockItems)
+      .set({ overrides: { ...overrides, bullets }, updatedAt: new Date() })
+      .where(eq(resumeBlockItems.id, itemId));
+  }
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Reorder bullets within an item. Writes sortOrder on the underlying profile
+ * bullet rows.
+ */
+export async function reorderBullets(
+  resumeId: string,
+  itemId: string,
+  bulletIds: string[]
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  const item = await db.query.resumeBlockItems.findFirst({
+    where: eq(resumeBlockItems.id, itemId),
+  });
+  if (!item) return;
+
+  if (item.sourceType === "work_experience") {
+    await Promise.all(
+      bulletIds.map((bulletId, index) =>
+        db
+          .update(experienceBullets)
+          .set({ sortOrder: index, updatedAt: new Date() })
+          .where(eq(experienceBullets.id, bulletId)),
+      ),
+    );
+  } else if (item.sourceType === "project") {
+    await Promise.all(
+      bulletIds.map((bulletId, index) =>
+        db
+          .update(projectBullets)
+          .set({ sortOrder: index, updatedAt: new Date() })
+          .where(eq(projectBullets.id, bulletId)),
+      ),
+    );
+  }
+
+  revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+/**
  * Add a new custom section to the resume.
  */
 export async function addCustomSection(resumeId: string, heading: string) {

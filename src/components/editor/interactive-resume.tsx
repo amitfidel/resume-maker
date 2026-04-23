@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { EditableText } from "./editable-text";
 import { EditableDateRange } from "./editable-date-range";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import {
   updateSummary as _updateSummary,
   updateBlockHeading as _updateBlockHeading,
@@ -432,6 +433,7 @@ function InteractiveBlock({
   resumeId: string;
   style: TemplateStyle;
 }) {
+  const confirm = useConfirm();
   const handleHeadingChange = useCallback(
     (text: string) => {
       const override = text === block.defaultHeading ? null : text;
@@ -444,11 +446,16 @@ function InteractiveBlock({
     addItemToBlock(resumeId, block.id);
   }, [resumeId, block.id]);
 
-  const handleDeleteBlock = useCallback(() => {
-    if (confirm(`Delete the "${block.heading}" section from this resume?`)) {
-      deleteBlock(resumeId, block.id);
-    }
-  }, [resumeId, block.id, block.heading]);
+  const handleDeleteBlock = useCallback(async () => {
+    const ok = await confirm({
+      title: `Delete "${block.heading}"?`,
+      description:
+        "The section is removed from this resume. Your profile data is untouched.",
+      confirmLabel: "Delete section",
+      destructive: true,
+    });
+    if (ok) deleteBlock(resumeId, block.id);
+  }, [resumeId, block.id, block.heading, confirm]);
 
   const visibleItems = block.items.filter((i) => i.isVisible);
   const sh = style.sectionHeading;

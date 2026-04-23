@@ -36,6 +36,8 @@ import {
   addItemToBlock,
   removeItemFromBlock,
   addBulletToItem,
+  deleteBullet,
+  reorderBullets,
   toggleBlockVisibility,
   reorderBlocks,
   reorderItems,
@@ -44,6 +46,7 @@ import {
 import { updateHeaderField } from "@/app/(dashboard)/profile/actions";
 import { AddSectionButton } from "./add-section-button";
 import { useResumeState } from "./resume-state";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 import type {
   ResolvedResume,
@@ -94,6 +97,8 @@ type FieldProps = {
   multiline?: boolean;
   rows?: number;
   autoSize?: boolean;
+  /** When "month", renders an HTML `<input type="month">`. */
+  type?: "text" | "month";
   /** Fires on every keystroke — for optimistic live preview updates */
   onLive?: (next: string) => void;
   /** Fires on blur — for the persisted server action */
@@ -108,6 +113,7 @@ function Field({
   multiline,
   rows = 2,
   autoSize,
+  type = "text",
   onLive,
   onSave,
   className,
@@ -166,7 +172,7 @@ function Field({
         />
       ) : (
         <input
-          type="text"
+          type={type}
           value={local}
           placeholder={placeholder}
           onChange={(e) => handleChange(e.target.value)}
@@ -453,6 +459,7 @@ function SortableBlockCard({
 
   const style = { transform: CSS.Transform.toString(transform), transition };
   const meta = SECTION_META[block.type];
+  const confirm = useConfirm();
 
   return (
     <div
@@ -507,10 +514,15 @@ function SortableBlockCard({
             )}
           </button>
           <button
-            onClick={() => {
-              if (confirm(`Delete "${block.heading}" section from this resume?`)) {
-                run(() => deleteBlock(resumeId, block.id));
-              }
+            onClick={async () => {
+              const ok = await confirm({
+                title: `Delete "${block.heading}"?`,
+                description:
+                  "The section is removed from this resume. Your profile data is untouched.",
+                confirmLabel: "Delete section",
+                destructive: true,
+              });
+              if (ok) run(() => deleteBlock(resumeId, block.id));
             }}
             aria-label="Delete section"
             className="rounded p-1.5 text-[var(--on-surface-muted)] opacity-0 transition-all hover:bg-[var(--surface-sunk)] hover:text-[var(--destructive)] group-hover:opacity-100"
@@ -737,6 +749,7 @@ function CollapsibleItem({
 }) {
   const [open, setOpen] = useState(false);
   const run = useTrackedAction();
+  const confirm = useConfirm();
   const {
     attributes,
     listeners,
@@ -782,10 +795,14 @@ function CollapsibleItem({
           </span>
         </button>
         <button
-          onClick={() => {
-            if (confirm("Remove this item from the resume?")) {
-              run(() => removeItemFromBlock(resumeId, item.id));
-            }
+          onClick={async () => {
+            const ok = await confirm({
+              title: `Remove "${summary.title}"?`,
+              description: "This item is removed from the resume. Profile data is untouched.",
+              confirmLabel: "Remove",
+              destructive: true,
+            });
+            if (ok) run(() => removeItemFromBlock(resumeId, item.id));
           }}
           aria-label="Remove item"
           className="rounded p-1 text-[var(--on-surface-muted)] opacity-0 transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--destructive)] group-hover/item:opacity-100"
@@ -835,15 +852,15 @@ function ExperienceItem({ item, resumeId }: { item: ResolvedBlockItem; resumeId:
       <div className="grid grid-cols-2 gap-2.5">
         <Field
           label="Start"
-          value={data.startDate ?? ""}
-          placeholder="YYYY-MM"
+          type="month"
+          value={(data.startDate ?? "").slice(0, 7)}
           onLive={live("startDate")}
           onSave={save("startDate")}
         />
         <Field
           label={data.isCurrent ? "End (current)" : "End"}
-          value={data.endDate ?? ""}
-          placeholder="YYYY-MM"
+          type="month"
+          value={(data.endDate ?? "").slice(0, 7)}
           onLive={live("endDate")}
           onSave={save("endDate")}
         />
@@ -879,8 +896,8 @@ function EducationItem({ item, resumeId }: { item: ResolvedBlockItem; resumeId: 
         />
       </div>
       <div className="grid grid-cols-3 gap-2.5">
-        <Field label="Start" value={data.startDate ?? ""} placeholder="YYYY-MM" onLive={live("startDate")} onSave={save("startDate")} />
-        <Field label="End" value={data.endDate ?? ""} placeholder="YYYY-MM" onLive={live("endDate")} onSave={save("endDate")} />
+        <Field label="Start" type="month" value={(data.startDate ?? "").slice(0, 7)} onLive={live("startDate")} onSave={save("startDate")} />
+        <Field label="End" type="month" value={(data.endDate ?? "").slice(0, 7)} onLive={live("endDate")} onSave={save("endDate")} />
         <Field label="GPA" value={data.gpa ?? ""} placeholder="3.8" onLive={live("gpa")} onSave={save("gpa")} />
       </div>
       <Field
@@ -968,8 +985,8 @@ function CertificationItem({ item, resumeId }: { item: ResolvedBlockItem; resume
         <Field label="Issuer" value={data.issuer ?? ""} onLive={live("issuer")} onSave={save("issuer")} />
       </div>
       <div className="grid grid-cols-2 gap-2.5">
-        <Field label="Issued" value={data.issueDate ?? ""} placeholder="YYYY-MM" onLive={live("issueDate")} onSave={save("issueDate")} />
-        <Field label="Expires" value={data.expiryDate ?? ""} placeholder="YYYY-MM" onLive={live("expiryDate")} onSave={save("expiryDate")} />
+        <Field label="Issued" type="month" value={(data.issueDate ?? "").slice(0, 7)} onLive={live("issueDate")} onSave={save("issueDate")} />
+        <Field label="Expires" type="month" value={(data.expiryDate ?? "").slice(0, 7)} onLive={live("expiryDate")} onSave={save("expiryDate")} />
       </div>
       <Field
         label="Credential URL"
@@ -1022,29 +1039,59 @@ function BulletsEditor({
 }) {
   const run = useTrackedAction();
   const { patchBullet } = useResumeState();
+  const [localBullets, setLocalBullets] = useState(bullets);
+
+  useEffect(() => setLocalBullets(bullets), [bullets]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    if (!over || active.id === over.id) return;
+    const oldIndex = localBullets.findIndex((b) => b.id === active.id);
+    const newIndex = localBullets.findIndex((b) => b.id === over.id);
+    const next = arrayMove(localBullets, oldIndex, newIndex);
+    setLocalBullets(next);
+    run(() =>
+      reorderBullets(
+        resumeId,
+        itemId,
+        next.map((b) => b.id),
+      ),
+    );
+  };
+
   return (
     <div>
       <span className="mb-1 flex items-center justify-between text-[11px] font-medium text-[var(--on-surface-muted)]">
         <span>Bullets</span>
         <span className="font-mono text-[10px] text-[var(--on-surface-faint)]">
-          {bullets.length}
+          {localBullets.length}
         </span>
       </span>
       <div className="space-y-1.5">
-        {bullets.map((b) => (
-          <Field
-            key={b.id}
-            value={b.text}
-            placeholder="Shipped X, which led to Y…"
-            multiline
-            autoSize
-            rows={2}
-            onLive={(v) => patchBullet(itemId, b.id, v)}
-            onSave={(v) =>
-              run(() => updateBulletText(resumeId, itemId, b.id, v))
-            }
-          />
-        ))}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={localBullets.map((b) => b.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {localBullets.map((b) => (
+              <SortableBullet
+                key={b.id}
+                bullet={b}
+                itemId={itemId}
+                resumeId={resumeId}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
         <button
           onClick={() => run(() => addBulletToItem(resumeId, itemId))}
           className="inline-flex items-center gap-1 text-[12px] text-[var(--magic-1)] opacity-70 transition-opacity hover:opacity-100 dark:text-[var(--magic-2)]"
@@ -1053,6 +1100,67 @@ function BulletsEditor({
           Add bullet
         </button>
       </div>
+    </div>
+  );
+}
+
+function SortableBullet({
+  bullet,
+  itemId,
+  resumeId,
+}: {
+  bullet: ResolvedBullet;
+  itemId: string;
+  resumeId: string;
+}) {
+  const run = useTrackedAction();
+  const { patchBullet } = useResumeState();
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: bullet.id });
+
+  const style = { transform: CSS.Transform.toString(transform), transition };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "group/bullet relative flex items-start gap-1",
+        isDragging && "opacity-90",
+      )}
+    >
+      <button
+        {...attributes}
+        {...listeners}
+        aria-label="Drag to reorder bullet"
+        className="mt-2.5 cursor-grab touch-none rounded p-0.5 text-[var(--on-surface-faint)] opacity-0 transition-opacity hover:text-[var(--on-surface-muted)] group-hover/bullet:opacity-100"
+      >
+        <GripVertical className="h-3 w-3" />
+      </button>
+      <div className="min-w-0 flex-1">
+        <Field
+          value={bullet.text}
+          placeholder="Shipped X, which led to Y…"
+          multiline
+          autoSize
+          rows={2}
+          onLive={(v) => patchBullet(itemId, bullet.id, v)}
+          onSave={(v) => run(() => updateBulletText(resumeId, itemId, bullet.id, v))}
+        />
+      </div>
+      <button
+        onClick={() => run(() => deleteBullet(resumeId, itemId, bullet.id))}
+        aria-label="Delete bullet"
+        className="mt-2 rounded p-1 text-[var(--on-surface-muted)] opacity-0 transition-colors hover:bg-[var(--surface)] hover:text-[var(--destructive)] group-hover/bullet:opacity-100"
+      >
+        <Trash2 className="h-3 w-3" />
+      </button>
     </div>
   );
 }

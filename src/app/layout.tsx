@@ -3,6 +3,7 @@ import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { TweaksPanel } from "@/components/layout/tweaks-panel";
 import { CommandPalette } from "@/components/layout/command-palette";
+import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 import "./globals.css";
 
 const geist = Geist({
@@ -49,9 +50,11 @@ export default function RootLayout({
         every form control between SSR and hydration). No app-logic effect.
       */}
       <body className="font-body antialiased" suppressHydrationWarning>
-        {children}
-        <CommandPalette />
-        <TweaksPanel />
+        <ConfirmDialogProvider>
+          {children}
+          <CommandPalette />
+          <TweaksPanel />
+        </ConfirmDialogProvider>
       </body>
     </html>
   );
