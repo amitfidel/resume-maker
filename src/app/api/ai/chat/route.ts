@@ -239,42 +239,60 @@ export async function POST(req: Request) {
 
         addSection: tool({
           description:
-            "Add a new section to the resume. Use `type` for standard sections (summary, experience, education, skills, projects, certifications). For anything else (e.g. Awards, Volunteering), leave `type` as 'custom' and pass `customHeading`. After adding, call addItem to populate it.",
+            "Add a new section to the resume. For standard sections pass `type` as one of: summary, experience, education, skills, projects, certifications. For a custom section (e.g. Awards, Volunteering), pass type='custom' AND customHeading with the label. After adding, call addItem to populate it.",
           inputSchema: z.object({
             type: z
-              .enum([
-                "summary",
-                "experience",
-                "education",
-                "skills",
-                "projects",
-                "certifications",
-                "custom",
-              ])
-              .describe("The section type"),
+              .string()
+              .describe(
+                "One of: summary | experience | education | skills | projects | certifications | custom",
+              ),
             customHeading: z
               .string()
-              .optional()
               .describe(
-                "When type='custom', the heading to display (e.g. 'Awards')",
+                "Heading for a custom section. Pass empty string '' when type is not 'custom'.",
               ),
           }),
           execute: async ({ type, customHeading }) => {
+            const validStandard = [
+              "summary",
+              "experience",
+              "education",
+              "skills",
+              "projects",
+              "certifications",
+            ];
             if (type === "custom") {
-              if (!customHeading) {
-                return { error: "customHeading required when type='custom'" };
+              const heading = (customHeading || "").trim();
+              if (!heading) {
+                return {
+                  error:
+                    "customHeading is required when type='custom'. Ask the user what to name it.",
+                };
               }
-              await addCustomSection(resumeId, customHeading);
+              await addCustomSection(resumeId, heading);
               actions.push({
                 tool: "addSection",
-                description: `Added custom section "${customHeading}"`,
+                description: `Added custom section "${heading}"`,
               });
-            } else {
-              await addStandardSection(resumeId, type);
+            } else if (validStandard.includes(type)) {
+              await addStandardSection(
+                resumeId,
+                type as
+                  | "summary"
+                  | "experience"
+                  | "education"
+                  | "skills"
+                  | "projects"
+                  | "certifications",
+              );
               actions.push({
                 tool: "addSection",
                 description: `Added ${type} section`,
               });
+            } else {
+              return {
+                error: `Unknown type "${type}". Must be one of summary, experience, education, skills, projects, certifications, custom.`,
+              };
             }
             return { success: true };
           },
@@ -339,20 +357,24 @@ export async function POST(req: Request) {
 
         updateItemField: tool({
           description:
-            "Update any field on an item: experience fields are {title, company, location, startDate, endDate, description}; education fields are {institution, degree, fieldOfStudy, startDate, endDate, gpa, description}; skill fields are {name, category, proficiency}; project fields are {name, url, description}; certification fields are {name, issuer, issueDate, expiryDate, credentialUrl}; custom item fields are {title, text}. Dates should be YYYY-MM or YYYY-MM-DD.",
+            "Update any field on an item. experience fields: title, company, location, startDate, endDate, description. education fields: institution, degree, fieldOfStudy, startDate, endDate, gpa, description. skills fields: name, category, proficiency. projects fields: name, url, description. certifications fields: name, issuer, issueDate, expiryDate, credentialUrl. custom fields: title, text. Dates in YYYY-MM format. Pass empty string '' to clear a field.",
           inputSchema: z.object({
             itemId: z.string(),
             field: z.string().describe("The field name"),
             value: z
               .string()
-              .nullable()
-              .describe("New value. Pass null or empty string to clear."),
+              .describe("New value. Pass empty string '' to clear."),
           }),
           execute: async ({ itemId, field, value }) => {
-            await updateItemFieldAction(resumeId, itemId, field, value);
+            await updateItemFieldAction(
+              resumeId,
+              itemId,
+              field,
+              value === "" ? null : value,
+            );
             actions.push({
               tool: "updateItemField",
-              description: `Set ${field} = "${value?.slice(0, 40) ?? "(empty)"}${(value?.length ?? 0) > 40 ? "…" : ""}"`,
+              description: `Set ${field} = "${value.slice(0, 40)}${value.length > 40 ? "…" : ""}"`,
             });
             return { success: true };
           },
@@ -360,14 +382,13 @@ export async function POST(req: Request) {
 
         addBullet: tool({
           description:
-            "Add a new bullet to an experience or project item. Creates it in the career profile so it's reusable. Returns the new bulletId; use rewriteBullet afterwards to set its text.",
+            "Add a new bullet to an experience or project item. If you know the bullet's text, pass it directly. Otherwise pass empty string '' and call rewriteBullet afterwards.",
           inputSchema: z.object({
             itemId: z.string(),
             text: z
               .string()
-              .optional()
               .describe(
-                "Optional starting text for the bullet. If provided, the bullet is saved with this text directly.",
+                "The bullet text. Pass empty string '' if you don't know it yet.",
               ),
           }),
           execute: async ({ itemId, text }) => {
