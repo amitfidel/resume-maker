@@ -12,6 +12,17 @@ import {
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import {
+  addStandardSection,
+  addCustomSection,
+  addItemToBlock,
+  removeItemFromBlock,
+  addBulletToItem,
+  deleteBullet as deleteBulletAction,
+  deleteBlock as deleteBlockAction,
+  updateItemField as updateItemFieldAction,
+  reorderItems as reorderItemsAction,
+} from "@/app/(dashboard)/resumes/actions";
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -47,7 +58,7 @@ export async function POST(req: Request) {
       model: groq("llama-3.3-70b-versatile"),
       system: systemPrompt,
       messages,
-      stopWhen: stepCountIs(8),
+      stopWhen: stepCountIs(20),
       tools: {
         updateSummary: tool({
           description: "Rewrite or set the resume's professional summary.",
@@ -221,6 +232,222 @@ export async function POST(req: Request) {
             actions.push({
               tool: "renameSection",
               description: `Renamed section to "${newHeading}"`,
+            });
+            return { success: true };
+          },
+        }),
+
+        addSection: tool({
+          description:
+            "Add a new section to the resume. Use `type` for standard sections (summary, experience, education, skills, projects, certifications). For anything else (e.g. Awards, Volunteering), leave `type` as 'custom' and pass `customHeading`. After adding, call addItem to populate it.",
+          inputSchema: z.object({
+            type: z
+              .enum([
+                "summary",
+                "experience",
+                "education",
+                "skills",
+                "projects",
+                "certifications",
+                "custom",
+              ])
+              .describe("The section type"),
+            customHeading: z
+              .string()
+              .optional()
+              .describe(
+                "When type='custom', the heading to display (e.g. 'Awards')",
+              ),
+          }),
+          execute: async ({ type, customHeading }) => {
+            if (type === "custom") {
+              if (!customHeading) {
+                return { error: "customHeading required when type='custom'" };
+              }
+              await addCustomSection(resumeId, customHeading);
+              actions.push({
+                tool: "addSection",
+                description: `Added custom section "${customHeading}"`,
+              });
+            } else {
+              await addStandardSection(resumeId, type);
+              actions.push({
+                tool: "addSection",
+                description: `Added ${type} section`,
+              });
+            }
+            return { success: true };
+          },
+        }),
+
+        deleteSection: tool({
+          description:
+            "Delete a section entirely from this resume (doesn't delete from the career profile).",
+          inputSchema: z.object({
+            blockId: z.string(),
+          }),
+          execute: async ({ blockId }) => {
+            await deleteBlockAction(resumeId, blockId);
+            actions.push({
+              tool: "deleteSection",
+              description: "Deleted a section",
+            });
+            return { success: true };
+          },
+        }),
+
+        addItem: tool({
+          description:
+            "Add a new empty item to a section (e.g. a new Experience entry, a new Skill, a new Project). Returns the new itemId so you can immediately call updateItemField to populate it.",
+          inputSchema: z.object({
+            blockId: z
+              .string()
+              .describe("The section ID to add the item to"),
+          }),
+          execute: async ({ blockId }) => {
+            await addItemToBlock(resumeId, blockId);
+            // Fetch the newest item for this block so the model has its ID
+            const items = await db.query.resumeBlockItems.findMany({
+              where: eq(resumeBlockItems.blockId, blockId),
+              orderBy: (t, { desc }) => [desc(t.createdAt)],
+              limit: 1,
+            });
+            const newItemId = items[0]?.id;
+            actions.push({
+              tool: "addItem",
+              description: "Added a new item to a section",
+            });
+            return { success: true, itemId: newItemId };
+          },
+        }),
+
+        removeItem: tool({
+          description:
+            "Remove an item from this resume (doesn't affect the career profile).",
+          inputSchema: z.object({
+            itemId: z.string(),
+          }),
+          execute: async ({ itemId }) => {
+            await removeItemFromBlock(resumeId, itemId);
+            actions.push({
+              tool: "removeItem",
+              description: "Removed an item",
+            });
+            return { success: true };
+          },
+        }),
+
+        updateItemField: tool({
+          description:
+            "Update any field on an item: experience fields are {title, company, location, startDate, endDate, description}; education fields are {institution, degree, fieldOfStudy, startDate, endDate, gpa, description}; skill fields are {name, category, proficiency}; project fields are {name, url, description}; certification fields are {name, issuer, issueDate, expiryDate, credentialUrl}; custom item fields are {title, text}. Dates should be YYYY-MM or YYYY-MM-DD.",
+          inputSchema: z.object({
+            itemId: z.string(),
+            field: z.string().describe("The field name"),
+            value: z
+              .string()
+              .nullable()
+              .describe("New value. Pass null or empty string to clear."),
+          }),
+          execute: async ({ itemId, field, value }) => {
+            await updateItemFieldAction(resumeId, itemId, field, value);
+            actions.push({
+              tool: "updateItemField",
+              description: `Set ${field} = "${value?.slice(0, 40) ?? "(empty)"}${(value?.length ?? 0) > 40 ? "…" : ""}"`,
+            });
+            return { success: true };
+          },
+        }),
+
+        addBullet: tool({
+          description:
+            "Add a new bullet to an experience or project item. Creates it in the career profile so it's reusable. Returns the new bulletId; use rewriteBullet afterwards to set its text.",
+          inputSchema: z.object({
+            itemId: z.string(),
+            text: z
+              .string()
+              .optional()
+              .describe(
+                "Optional starting text for the bullet. If provided, the bullet is saved with this text directly.",
+              ),
+          }),
+          execute: async ({ itemId, text }) => {
+            await addBulletToItem(resumeId, itemId);
+            // Look up the bullet that was just created
+            const item = await db.query.resumeBlockItems.findFirst({
+              where: eq(resumeBlockItems.id, itemId),
+            });
+            if (!item) return { error: "Item not found" };
+
+            let bulletId: string | undefined;
+            if (item.sourceType === "work_experience") {
+              const { experienceBullets } = await import("@/db/schema");
+              const rows = await db.query.experienceBullets.findMany({
+                where: eq(experienceBullets.experienceId, item.sourceId),
+                orderBy: (t, { desc }) => [desc(t.sortOrder)],
+                limit: 1,
+              });
+              bulletId = rows[0]?.id;
+              if (text && bulletId) {
+                await db
+                  .update(experienceBullets)
+                  .set({ text, updatedAt: new Date() })
+                  .where(eq(experienceBullets.id, bulletId));
+              }
+            } else if (item.sourceType === "project") {
+              const { projectBullets } = await import("@/db/schema");
+              const rows = await db.query.projectBullets.findMany({
+                where: eq(projectBullets.projectId, item.sourceId),
+                orderBy: (t, { desc }) => [desc(t.sortOrder)],
+                limit: 1,
+              });
+              bulletId = rows[0]?.id;
+              if (text && bulletId) {
+                await db
+                  .update(projectBullets)
+                  .set({ text, updatedAt: new Date() })
+                  .where(eq(projectBullets.id, bulletId));
+              }
+            }
+
+            actions.push({
+              tool: "addBullet",
+              description: text
+                ? `Added bullet: "${text.slice(0, 50)}${text.length > 50 ? "…" : ""}"`
+                : "Added a blank bullet",
+            });
+            return { success: true, bulletId };
+          },
+        }),
+
+        deleteBullet: tool({
+          description:
+            "Permanently delete a bullet from the underlying profile. Destructive. Prefer hideBullet if the user may want it later on a different resume.",
+          inputSchema: z.object({
+            itemId: z.string(),
+            bulletId: z.string(),
+          }),
+          execute: async ({ itemId, bulletId }) => {
+            await deleteBulletAction(resumeId, itemId, bulletId);
+            actions.push({
+              tool: "deleteBullet",
+              description: "Deleted a bullet",
+            });
+            return { success: true };
+          },
+        }),
+
+        reorderItems: tool({
+          description:
+            "Reorder items within a section (e.g., reorder work experience entries). Pass the full list of item IDs in the desired order.",
+          inputSchema: z.object({
+            blockId: z.string(),
+            itemIds: z.array(z.string()),
+          }),
+          execute: async ({ blockId, itemIds }) => {
+            await reorderItemsAction(resumeId, blockId, itemIds);
+            actions.push({
+              tool: "reorderItems",
+              description: "Reordered items within a section",
             });
             return { success: true };
           },
