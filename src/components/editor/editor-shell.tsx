@@ -16,6 +16,7 @@ import { VersionHistory } from "./version-history";
 import { SaveVersionButton } from "./save-version-button";
 import { SaveIndicator } from "./save-indicator";
 import { TemplateRenderer } from "@/templates/renderer";
+import { useT } from "@/lib/i18n/context";
 import type { ResolvedResume } from "@/lib/resume/types";
 
 type RightPanel = "none" | "ai-review" | "job-tailor" | "ai-chat";
@@ -29,6 +30,7 @@ export function EditorShell({ resume }: Props) {
   const [rightPanel, setRightPanel] = useState<RightPanel>("none");
   const [activeTab, setActiveTab] = useState<ViewTab>("editor");
   const router = useRouter();
+  const t = useT();
 
   const togglePanel = (panel: RightPanel) => {
     setRightPanel((prev) => (prev === panel ? "none" : panel));
@@ -56,18 +58,18 @@ export function EditorShell({ resume }: Props) {
             {resume.title}
           </h1>
           <SaveIndicator />
-          <div className="ml-2 inline-flex rounded-full bg-[var(--surface-sunk)] p-[3px]">
+          <div className="ms-2 inline-flex rounded-full bg-[var(--surface-sunk)] p-[3px]">
             {(["editor", "preview", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-full px-4 py-1.5 text-[13px] font-medium capitalize transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] ${
+                className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] ${
                   activeTab === tab
                     ? "bg-[var(--surface-raised)] text-[var(--on-surface)] shadow-[var(--sh-1)]"
                     : "text-[var(--on-surface-muted)] hover:text-[var(--on-surface-soft)]"
                 }`}
               >
-                {tab}
+                {t(`editor.tab.${tab}`)}
               </button>
             ))}
           </div>
@@ -86,7 +88,7 @@ export function EditorShell({ resume }: Props) {
                 }
               >
                 <MessageCircle className="h-4 w-4" />
-                AI Chat
+                {t("editor.ai_chat")}
               </Button>
               <Button
                 variant="ghost"
@@ -99,7 +101,7 @@ export function EditorShell({ resume }: Props) {
                 }
               >
                 <Target className="h-3.5 w-3.5" />
-                Tailor
+                {t("editor.tailor")}
               </Button>
               <Button
                 variant="ghost"
@@ -112,7 +114,7 @@ export function EditorShell({ resume }: Props) {
                 }
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                Review
+                {t("editor.review")}
               </Button>
             </>
           )}
@@ -121,7 +123,7 @@ export function EditorShell({ resume }: Props) {
               size="sm"
               className="magic-shine h-9 gap-2 rounded-full bg-[var(--ink)] px-4 text-[var(--cream)] hover:-translate-y-px hover:bg-[var(--ink)]"
             >
-              Export
+              {t("common.export")}
               <Download className="h-3.5 w-3.5" />
             </Button>
           </a>

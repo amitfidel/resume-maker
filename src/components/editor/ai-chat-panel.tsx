@@ -14,6 +14,7 @@ import {
   MicOff,
 } from "lucide-react";
 import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
+import { useT } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -27,21 +28,17 @@ type Props = {
   onClose: () => void;
 };
 
-const SUGGESTIONS = [
-  "Make my summary more concise",
-  "Add more metrics to my bullets",
-  "Reorder sections - put skills before experience",
-  "Rewrite my first bullet to sound stronger",
-];
-
 export function AiChatPanel({ resumeId, onClose }: Props) {
   const router = useRouter();
+  const t = useT();
+  const SUGGESTIONS = [
+    t("ai.suggest.summary"),
+    t("ai.suggest.metrics"),
+    t("ai.suggest.reorder"),
+    t("ai.suggest.rewrite"),
+  ];
   const [messages, setMessages] = useState<Message[]>([
-    {
-      role: "assistant",
-      content:
-        "Hi! I'm your resume assistant. Tell me what you'd like to change - I can rewrite bullets, reorder sections, update your summary, or hide items. What would you like to improve?",
-    },
+    { role: "assistant", content: t("ai.initial") },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -168,7 +165,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
             <Sparkles className="h-3.5 w-3.5 text-white" />
           </div>
           <h3 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
-            AI companion
+            {t("ai.title")}
           </h3>
         </div>
         <Button
@@ -228,7 +225,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
               style={{ animation: "bubble-in 500ms var(--ease-spring) both" }}
             >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              thinking…
+              {t("ai.thinking")}
             </div>
           </div>
         )}
@@ -238,7 +235,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
       {messages.length === 1 && !isLoading && (
         <div className="border-t border-[var(--border-ghost)] px-5 py-3.5">
           <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
-            Try asking
+            {t("ai.try_asking")}
           </p>
           <div className="flex flex-wrap gap-1.5">
             {SUGGESTIONS.map((s) => (
@@ -266,7 +263,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
               />
             ))}
           </div>
-          <span>Listening… speak clearly.</span>
+          <span>{t("ai.listening")}</span>
         </div>
       )}
 
@@ -293,7 +290,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
                 handleSubmit(e);
               }
             }}
-            placeholder={isListening ? "Listening…" : "Ask me to change something…"}
+            placeholder={isListening ? t("ai.listening") : t("ai.placeholder")}
             rows={2}
             className="max-h-[120px] flex-1 resize-none border-0 bg-transparent p-0 text-[14px] shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-transparent"
             disabled={isLoading}

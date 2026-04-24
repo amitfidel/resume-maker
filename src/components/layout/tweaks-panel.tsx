@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Settings2, X } from "lucide-react";
+import { useI18n } from "@/lib/i18n/context";
+import type { Locale } from "@/lib/i18n/dictionary";
 
 type Accent = "indigo" | "plum" | "moss" | "ember" | "cobalt";
 type Density = "compact" | "comfortable" | "spacious";
@@ -49,6 +51,7 @@ function apply(t: Tweaks) {
 }
 
 export function TweaksPanel() {
+  const { locale, setLocale, t: tr } = useI18n();
   const [open, setOpen] = useState(false);
   const [t, setT] = useState<Tweaks>(DEFAULTS);
   const [hydrated, setHydrated] = useState(false);
@@ -89,7 +92,7 @@ export function TweaksPanel() {
     <>
       {open && (
         <div
-          className="fixed bottom-20 right-6 z-40 w-[300px] rounded-[22px] bg-[var(--surface-raised)] p-[18px] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]"
+          className="fixed bottom-20 end-6 z-40 w-[300px] rounded-[22px] bg-[var(--surface-raised)] p-[18px] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]"
           style={{
             transformOrigin: "bottom right",
             animation: "tweaks-in 280ms var(--ease-spring)",
@@ -98,21 +101,30 @@ export function TweaksPanel() {
           <style>{`@keyframes tweaks-in { from { opacity: 0; transform: translateY(8px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
           <div className="mb-1.5 flex items-start justify-between">
             <h4 className="font-headline text-[20px] font-normal tracking-[-0.01em]">
-              Tweaks
+              {tr("tweaks.title")}
             </h4>
             <button
               onClick={() => setOpen(false)}
               className="rounded-md p-1 text-[var(--on-surface-muted)] transition-colors hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
-              aria-label="Close tweaks"
+              aria-label={tr("common.close")}
             >
               <X className="h-4 w-4" />
             </button>
           </div>
           <p className="mb-4 text-[12px] text-[var(--on-surface-muted)]">
-            Tune the look &amp; feel. Persists across sessions.
+            {tr("tweaks.lead")}
           </p>
 
-          <Row label="Accent" valueLabel={t.accent}>
+          <Row label={tr("tweaks.language")} valueLabel={locale === "he" ? "עברית" : "English"}>
+            <Seg
+              options={["en", "he"] as Locale[]}
+              value={locale}
+              onChange={(v) => setLocale(v)}
+              labels={{ en: "English", he: "עברית" }}
+            />
+          </Row>
+
+          <Row label={tr("tweaks.accent")} valueLabel={t.accent}>
             <div className="flex gap-2">
               {ACCENT_SWATCHES.map((s) => (
                 <button
@@ -130,7 +142,7 @@ export function TweaksPanel() {
             </div>
           </Row>
 
-          <Row label="Mode" valueLabel={t.mode}>
+          <Row label={tr("tweaks.mode")} valueLabel={t.mode}>
             <Seg
               options={["light", "dark"] as Mode[]}
               value={t.mode}
@@ -138,7 +150,7 @@ export function TweaksPanel() {
             />
           </Row>
 
-          <Row label="Density" valueLabel={t.density}>
+          <Row label={tr("tweaks.density")} valueLabel={t.density}>
             <Seg
               options={["compact", "comfortable", "spacious"] as Density[]}
               value={t.density}
@@ -146,7 +158,7 @@ export function TweaksPanel() {
             />
           </Row>
 
-          <Row label="Motion" valueLabel={t.motion}>
+          <Row label={tr("tweaks.motion")} valueLabel={t.motion}>
             <Seg
               options={["none", "soft", "expressive"] as Motion[]}
               value={t.motion}
@@ -154,7 +166,7 @@ export function TweaksPanel() {
             />
           </Row>
 
-          <Row label="Texture" valueLabel={t.texture}>
+          <Row label={tr("tweaks.texture")} valueLabel={t.texture}>
             <Seg
               options={["flat", "paper", "grain"] as Texture[]}
               value={t.texture}
@@ -166,10 +178,10 @@ export function TweaksPanel() {
 
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-4 py-2.5 text-[13px] font-medium text-[var(--cream)] shadow-[var(--sh-3)] transition-transform hover:-translate-y-px"
+        className="fixed bottom-6 end-6 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-4 py-2.5 text-[13px] font-medium text-[var(--cream)] shadow-[var(--sh-3)] transition-transform hover:-translate-y-px"
       >
         <Settings2 className="h-4 w-4" />
-        Tweaks
+        {tr("tweaks.btn")}
       </button>
     </>
   );
@@ -201,10 +213,12 @@ function Seg<T extends string>({
   options,
   value,
   onChange,
+  labels,
 }: {
   options: T[];
   value: T;
   onChange: (v: T) => void;
+  labels?: Record<T, string>;
 }) {
   return (
     <div className="flex gap-[2px] rounded-full bg-[var(--surface-sunk)] p-[3px]">
@@ -218,7 +232,7 @@ function Seg<T extends string>({
               : "text-[var(--on-surface-muted)]"
           }`}
         >
-          {o}
+          {labels?.[o] ?? o}
         </button>
       ))}
     </div>

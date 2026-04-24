@@ -1,7 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PaperPreview } from "@/components/landing/paper-preview";
 import { MagneticButton } from "@/components/ui/magnetic-button";
+import { useT } from "@/lib/i18n/context";
 import {
   FileText,
   Sparkles,
@@ -12,49 +15,38 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
-// Four combined steps — each card pairs a workflow move with what Resumi
-// actually does for you. Replaces the old separate "features" + "workflow"
-// sections with one clear value prop.
-const STEPS = [
-  {
-    n: "01",
-    icon: FileText,
-    title: "Start from your profile",
-    italic: "profile",
-    description:
-      "Your career profile is the source of truth. Build it once on a canvas that feels like a design tool — drag sections, edit inline, watch the resume compose itself.",
-    magical: false,
-  },
-  {
-    n: "02",
-    icon: Sparkles,
-    title: "Compose with AI",
-    italic: "AI",
-    description:
-      "Contextual writing lives inside your document. Improve bullets, strengthen summaries, add metrics — one click, no context switch.",
-    magical: true,
-  },
-  {
-    n: "03",
-    icon: Target,
-    title: "Tailor to the job",
-    italic: "Tailor",
-    description:
-      "Paste a job description and get an instant match score, keyword gaps, and rewrite suggestions. Resumi re-weights your resume to match the role.",
-    magical: true,
-  },
-  {
-    n: "04",
-    icon: BarChart3,
-    title: "Track what works",
-    italic: "works",
-    description:
-      "Link resume versions to applications. Watch your pipeline from saved to offered. Double down on the versions that land interviews.",
-    magical: false,
-  },
-];
-
 export default function Home() {
+  const t = useT();
+  const STEPS = [
+    {
+      n: "01",
+      icon: FileText,
+      title: t("landing.step1.title"),
+      desc: t("landing.step1.desc"),
+      magical: false,
+    },
+    {
+      n: "02",
+      icon: Sparkles,
+      title: t("landing.step2.title"),
+      desc: t("landing.step2.desc"),
+      magical: true,
+    },
+    {
+      n: "03",
+      icon: Target,
+      title: t("landing.step3.title"),
+      desc: t("landing.step3.desc"),
+      magical: true,
+    },
+    {
+      n: "04",
+      icon: BarChart3,
+      title: t("landing.step4.title"),
+      desc: t("landing.step4.desc"),
+      magical: false,
+    },
+  ];
   return (
     <div className="relative min-h-screen overflow-x-hidden">
       {/* Nav */}
@@ -67,10 +59,10 @@ export default function Home() {
         </Link>
         <nav className="hidden items-center gap-8 text-sm text-[var(--on-surface-soft)] md:flex">
           <a href="#how" className="relative py-1 transition-colors hover:text-[var(--on-surface)]">
-            How it works
+            {t("nav.how")}
           </a>
           <a href="#pricing" className="relative py-1 transition-colors hover:text-[var(--on-surface)]">
-            Pricing
+            {t("nav.pricing")}
           </a>
         </nav>
         <div className="flex items-center gap-2">
@@ -80,7 +72,7 @@ export default function Home() {
               size="sm"
               className="rounded-full text-[var(--on-surface-soft)]"
             >
-              Sign in
+              {t("nav.signin")}
             </Button>
           </Link>
           <Link href="/signup">
@@ -88,8 +80,8 @@ export default function Home() {
               size="sm"
               className="magic-shine rounded-full bg-[var(--ink)] px-4 text-[var(--cream)] hover:-translate-y-px hover:bg-[var(--ink)]"
             >
-              Get started
-              <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              {t("nav.get_started")}
+              <ArrowRight className="ms-1.5 h-3.5 w-3.5 rtl:rotate-180" />
             </Button>
           </Link>
         </div>
@@ -99,29 +91,27 @@ export default function Home() {
       <section className="relative mx-auto max-w-[1240px] px-10 pb-10 pt-20">
         <span className="mb-7 inline-flex items-center gap-2 rounded-full bg-[var(--surface-raised)] px-3.5 py-1.5 text-[12px] tracking-[0.04em] text-[var(--on-surface-soft)] shadow-[inset_0_0_0_1px_var(--border-ghost),var(--sh-1)]">
             <span className="pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
-            Now with live AI rewrite
+            {t("landing.eyebrow")}
           </span>
 
         <h1 className="font-headline max-w-[1000px] text-[clamp(56px,8vw,112px)] font-normal leading-[0.96] tracking-[-0.025em] text-[var(--on-surface)]">
-          Your career,{" "}
+          {t("landing.h1.part1")}{" "}
           <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">
-            composed
+            {t("landing.h1.italic")}
           </em>{" "}
-          — not just listed.
+          {t("landing.h1.part2")}
         </h1>
 
         <p className="mt-7 max-w-[520px] text-[19px] leading-[1.55] text-[var(--on-surface-soft)]">
-          Resumi is an editorial resume workspace. Structured like a profile,
-          rendered like a document, polished by an AI that reads between the
-          lines.
+          {t("landing.lead")}
         </p>
 
         <div className="mt-10 flex flex-wrap items-center gap-3.5">
           <MagneticButton>
             <Link href="/signup">
               <Button className="magical-gradient magic-shine h-12 rounded-full px-6 text-[15px] font-medium shadow-[0_1px_0_rgba(255,255,255,0.15)_inset,0_10px_24px_-8px_var(--magic-glow)]">
-                Start composing
-                <ArrowRight className="ml-1.5 h-4 w-4" />
+                {t("landing.cta.primary")}
+                <ArrowRight className="ms-1.5 h-4 w-4 rtl:rotate-180" />
               </Button>
             </Link>
           </MagneticButton>
@@ -131,16 +121,16 @@ export default function Home() {
                 variant="outline"
                 className="h-12 rounded-full border-0 bg-[var(--surface-raised)] px-6 text-[15px] text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong),var(--sh-1)] hover:shadow-[inset_0_0_0_1px_var(--ink),var(--sh-2)]"
               >
-                See the editor
+                {t("landing.cta.secondary")}
               </Button>
             </Link>
           </MagneticButton>
-          <span className="ml-1 inline-flex items-center gap-1.5 text-[13px] text-[var(--on-surface-muted)]">
-            Press
+          <span className="ms-1 inline-flex items-center gap-1.5 text-[13px] text-[var(--on-surface-muted)]">
+            {t("landing.press")}
             <kbd className="font-mono rounded bg-[var(--surface-raised)] px-1.5 py-0.5 text-[11px] shadow-[inset_0_0_0_1px_var(--border-ghost-strong),0_1px_0_var(--border-ghost-strong)]">
               ⌘K
             </kbd>
-            anywhere
+            {t("landing.anywhere")}
           </span>
         </div>
       </section>
@@ -198,56 +188,48 @@ export default function Home() {
       {/* How it works — combined workflow + features */}
       <section id="how" className="mx-auto max-w-[1240px] px-10 py-[120px]">
         <p className="text-[11px] uppercase tracking-[0.22em] text-[var(--on-surface-muted)]">
-          How Resumi works
+          {t("landing.how.eyebrow")}
         </p>
         <h2 className="font-headline mt-3.5 max-w-[900px] text-[clamp(40px,5vw,64px)] font-normal leading-[1.02] tracking-[-0.02em]">
-          From blank page to{" "}
+          {t("landing.how.h2.part1")}{" "}
           <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">
-            offer-ready
+            {t("landing.how.h2.italic")}
           </em>
-          , in four moves.
+          {t("landing.how.h2.part2")}
         </h2>
         <p className="mt-5 max-w-[640px] text-[17px] leading-[1.55] text-[var(--on-surface-soft)]">
-          One tool, every stage of the resume lifecycle. You write; Resumi
-          sharpens, tailors, and tracks — so every draft works harder.
+          {t("landing.how.lead")}
         </p>
 
         <div className="mt-[60px] grid grid-cols-1 gap-[1px] overflow-hidden rounded-2xl bg-[var(--border-ghost)] shadow-[inset_0_0_0_1px_var(--border-ghost)] md:grid-cols-2">
-          {STEPS.map((s) => {
-            const parts = s.title.split(s.italic);
-            const pre = parts[0] ?? "";
-            const post = parts.slice(1).join(s.italic);
-            return (
-              <div
-                key={s.n}
-                className="group relative flex flex-col gap-4 overflow-hidden bg-[var(--surface)] p-10 transition-colors hover:bg-[var(--surface-raised)]"
-              >
-                <span className="absolute left-0 top-0 h-0.5 w-0 bg-gradient-to-r from-[var(--magic-1)] to-[var(--magic-2)] transition-[width] duration-[var(--t-slow)] ease-[var(--ease-out)] group-hover:w-full" />
-                <div className="flex items-center gap-4">
-                  <span className="font-headline text-[54px] leading-none tracking-[-0.02em] text-[var(--on-surface-faint)] transition-colors group-hover:text-[var(--magic-2)]">
-                    {s.n}
-                  </span>
-                  <div
-                    className={`flex h-[42px] w-[42px] place-items-center rounded-[10px] bg-[var(--surface-sunk)] text-[var(--on-surface)] transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] group-hover:-rotate-[4deg] group-hover:text-[var(--cream)] ${
-                      s.magical
-                        ? "group-hover:[background:linear-gradient(135deg,var(--magic-1),var(--magic-2))]"
-                        : "group-hover:bg-[var(--ink)]"
-                    }`}
-                  >
-                    <s.icon className="mx-auto h-[18px] w-[18px]" />
-                  </div>
+          {STEPS.map((s) => (
+            <div
+              key={s.n}
+              className="group relative flex flex-col gap-4 overflow-hidden bg-[var(--surface)] p-10 transition-colors hover:bg-[var(--surface-raised)]"
+            >
+              <span className="absolute start-0 top-0 h-0.5 w-0 bg-gradient-to-r from-[var(--magic-1)] to-[var(--magic-2)] transition-[width] duration-[var(--t-slow)] ease-[var(--ease-out)] group-hover:w-full" />
+              <div className="flex items-center gap-4">
+                <span className="font-headline text-[54px] leading-none tracking-[-0.02em] text-[var(--on-surface-faint)] transition-colors group-hover:text-[var(--magic-2)]">
+                  {s.n}
+                </span>
+                <div
+                  className={`flex h-[42px] w-[42px] place-items-center rounded-[10px] bg-[var(--surface-sunk)] text-[var(--on-surface)] transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] group-hover:-rotate-[4deg] group-hover:text-[var(--cream)] ${
+                    s.magical
+                      ? "group-hover:[background:linear-gradient(135deg,var(--magic-1),var(--magic-2))]"
+                      : "group-hover:bg-[var(--ink)]"
+                  }`}
+                >
+                  <s.icon className="mx-auto h-[18px] w-[18px]" />
                 </div>
-                <h3 className="font-headline text-[32px] font-normal leading-tight tracking-[-0.015em]">
-                  {pre}
-                  <em className="serif-ital">{s.italic}</em>
-                  {post}
-                </h3>
-                <p className="max-w-[42ch] text-[15px] leading-[1.55] text-[var(--on-surface-soft)]">
-                  {s.description}
-                </p>
               </div>
-            );
-          })}
+              <h3 className="font-headline text-[28px] font-normal leading-tight tracking-[-0.015em]">
+                {s.title}
+              </h3>
+              <p className="max-w-[42ch] text-[15px] leading-[1.55] text-[var(--on-surface-soft)]">
+                {s.desc}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -262,22 +244,21 @@ export default function Home() {
             }}
           />
           <h2 className="font-headline relative text-[clamp(44px,6vw,84px)] font-normal leading-none tracking-[-0.025em]">
-            Ready to{" "}
+            {t("landing.cta2.part1")}{" "}
             <em className="serif-ital" style={{ color: "#c9b2ff" }}>
-              compose
+              {t("landing.cta2.italic")}
             </em>{" "}
-            your future?
+            {t("landing.cta2.part2")}
           </h2>
           <p className="relative mx-auto mt-5 max-w-xl text-[17px] text-[rgba(250,248,243,0.75)]">
-            Start free. No credit card. Built for careers that take themselves
-            seriously — without taking themselves too seriously.
+            {t("landing.cta2.lead")}
           </p>
           <div className="relative mt-9 inline-flex flex-wrap justify-center gap-3.5">
             <MagneticButton>
               <Link href="/signup">
                 <Button className="magical-gradient magic-shine h-12 rounded-full px-7 text-[15px]">
-                  Start your first resume
-                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                  {t("landing.cta2.primary")}
+                  <ArrowRight className="ms-1.5 h-4 w-4 rtl:rotate-180" />
                 </Button>
               </Link>
             </MagneticButton>
@@ -287,8 +268,8 @@ export default function Home() {
                   variant="ghost"
                   className="h-12 rounded-full bg-transparent px-7 text-[15px] text-[var(--cream)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.25)] hover:bg-white/5 hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.7)]"
                 >
-                  Sign in
-                  <ArrowUpRight className="ml-1.5 h-4 w-4" />
+                  {t("nav.signin")}
+                  <ArrowUpRight className="ms-1.5 h-4 w-4" />
                 </Button>
               </Link>
             </MagneticButton>
@@ -302,9 +283,9 @@ export default function Home() {
           <span className="font-headline text-[15px] text-[var(--on-surface)]">
             Resumi
           </span>{" "}
-          — your career, composed.
+          {t("landing.footer.tagline")}
         </span>
-        <span>© {new Date().getFullYear()} Built for the serious.</span>
+        <span>© {new Date().getFullYear()}</span>
       </footer>
     </div>
   );

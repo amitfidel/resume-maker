@@ -13,10 +13,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signIn, signInWithGoogle } from "../actions";
+import { useT } from "@/lib/i18n/context";
 
 export default function LoginPage() {
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -48,10 +51,13 @@ export default function LoginPage() {
             <span className="ml-1 inline-block h-1.5 w-1.5 self-center rounded-full bg-[var(--magic-2)]" />
           </Link>
           <CardTitle className="font-headline text-[28px] font-normal leading-none tracking-[-0.02em]">
-            Welcome <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">back</em>.
+            {t("auth.login.title.part1")}{" "}
+            <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">
+              {t("auth.login.title.italic")}
+            </em>
           </CardTitle>
           <CardDescription className="text-[var(--on-surface-muted)]">
-            Sign in to continue composing.
+            {t("auth.login.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -79,7 +85,7 @@ export default function LoginPage() {
                 fill="#EA4335"
               />
             </svg>
-            Continue with Google
+            {t("auth.login.google")}
           </Button>
 
           <div className="relative">
@@ -87,13 +93,13 @@ export default function LoginPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("common.or")}</span>
             </div>
           </div>
 
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.login.email")}</Label>
               <Input
                 id="email"
                 name="email"
@@ -103,7 +109,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.login.password")}</Label>
               <Input
                 id="password"
                 name="password"
@@ -121,17 +127,17 @@ export default function LoginPage() {
               className="magical-gradient magic-shine h-11 w-full rounded-full"
               disabled={loading}
             >
-              {loading ? "Signing in…" : "Sign in"}
+              {loading ? t("auth.login.submitting") : t("auth.login.submit")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-[var(--on-surface-muted)]">
-            Don&apos;t have an account?{" "}
+            {t("auth.login.no_account")}{" "}
             <Link
               href="/signup"
               className="text-[var(--magic-1)] underline-offset-4 hover:underline dark:text-[var(--magic-2)]"
             >
-              Sign up
+              {t("auth.signup.submit")}
             </Link>
           </p>
         </CardContent>

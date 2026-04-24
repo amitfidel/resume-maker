@@ -47,6 +47,7 @@ import { updateHeaderField } from "@/app/(dashboard)/profile/actions";
 import { AddSectionButton } from "./add-section-button";
 import { useResumeState } from "./resume-state";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useT } from "@/lib/i18n/context";
 import { cn } from "@/lib/utils";
 import type {
   ResolvedResume,
@@ -191,41 +192,38 @@ function Field({
 // Section metadata
 // ============================================================
 
-const SECTION_META: Record<BlockType, { description: string; addLabel: string }> = {
-  header: { description: "", addLabel: "" },
-  summary: {
-    description: "A short positioning paragraph that hiring managers read first.",
-    addLabel: "",
-  },
-  experience: {
-    description:
-      "List your roles starting with the most recent. Bullets beat paragraphs.",
-    addLabel: "Add one more experience",
-  },
-  education: {
-    description:
-      "A varied education on your resume shows the foundations you bring.",
-    addLabel: "Add one more education",
-  },
-  skills: {
-    description:
-      "Name the tools, languages, and methods you know. Group by category.",
-    addLabel: "Add one more skill",
-  },
-  projects: {
-    description:
-      "Personal builds, side projects, open source — anything worth showing.",
-    addLabel: "Add one more project",
-  },
-  certifications: {
-    description: "Credentials, licenses, and certifications you hold.",
-    addLabel: "Add one more certification",
-  },
-  custom: {
-    description: "Your own section. Use it for awards, languages, or anything else.",
-    addLabel: "Add one more item",
-  },
-};
+function useSectionMeta() {
+  const T = useT();
+  const meta: Record<BlockType, { description: string; addLabel: string }> = {
+    header: { description: "", addLabel: "" },
+    summary: { description: T("ce.section.summary_hint"), addLabel: "" },
+    experience: {
+      description: T("ce.section.experience_hint"),
+      addLabel: T("ce.add_item.experience"),
+    },
+    education: {
+      description: T("ce.section.education_hint"),
+      addLabel: T("ce.add_item.education"),
+    },
+    skills: {
+      description: T("ce.section.skills_hint"),
+      addLabel: T("ce.add_item.skills"),
+    },
+    projects: {
+      description: T("ce.section.projects_hint"),
+      addLabel: T("ce.add_item.projects"),
+    },
+    certifications: {
+      description: T("ce.section.certifications_hint"),
+      addLabel: T("ce.add_item.certifications"),
+    },
+    custom: {
+      description: "",
+      addLabel: T("ce.add_item.custom"),
+    },
+  };
+  return meta;
+}
 
 // ============================================================
 // Main ContentEditor
@@ -233,6 +231,7 @@ const SECTION_META: Record<BlockType, { description: string; addLabel: string }>
 
 export function ContentEditor() {
   const { resume } = useResumeState();
+  const T = useT();
   const [blocks, setBlocks] = useState(resume.blocks);
   // Gate DnD rendering behind mount. dnd-kit's internal accessibility
   // announcer uses a module-level counter for `aria-describedby` IDs, which
@@ -265,10 +264,10 @@ export function ContentEditor() {
       <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
-            Content
+            {T("ce.eyebrow")}
           </p>
           <h3 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
-            Edit your resume
+            {T("ce.title")}
           </h3>
         </div>
       </div>
@@ -341,6 +340,7 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
   const [open, setOpen] = useState(true);
   const run = useTrackedAction();
   const { patchHeader } = useResumeState();
+  const T = useT();
   const h = resume.header;
   const save = (field: Parameters<typeof updateHeaderField>[0]) =>
     (v: string) => run(() => updateHeaderField(field, v));
@@ -350,14 +350,14 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
     <div className="overflow-hidden rounded-[12px] bg-[var(--surface-raised)] shadow-[inset_0_0_0_1px_var(--border-ghost)]">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between px-4 py-3.5 text-left"
+        className="flex w-full items-center justify-between px-4 py-3.5 text-start"
       >
         <div>
           <h4 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
-            Personal details
+            {T("ce.personal.title")}
           </h4>
           <p className="mt-0.5 text-[12px] leading-tight text-[var(--on-surface-muted)]">
-            Your name, headline, and contact info. Updates apply to all resumes.
+            {T("ce.personal.lead")}
           </p>
         </div>
         <ChevronDown
@@ -369,14 +369,14 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
       {open && (
         <div className="space-y-2.5 border-t border-[var(--border-ghost)] p-4">
           <Field
-            label="Full name"
+            label={T("ce.field.fullname")}
             value={h.fullName ?? ""}
             placeholder="Avery Chen"
             onLive={live("fullName")}
             onSave={save("fullName")}
           />
           <Field
-            label="Headline"
+            label={T("ce.field.headline")}
             value={h.headline ?? ""}
             placeholder="Senior Product Designer · Systems & Tooling"
             onLive={live("headline")}
@@ -384,14 +384,14 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
           />
           <div className="grid grid-cols-2 gap-2.5">
             <Field
-              label="Email"
+              label={T("ce.field.email")}
               value={h.email ?? ""}
               placeholder="you@example.com"
               onLive={live("email")}
               onSave={save("email")}
             />
             <Field
-              label="Phone"
+              label={T("ce.field.phone")}
               value={h.phone ?? ""}
               placeholder="+1 415 555 0100"
               onLive={live("phone")}
@@ -399,7 +399,7 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
             />
           </div>
           <Field
-            label="Location"
+            label={T("ce.field.location")}
             value={h.location ?? ""}
             placeholder="San Francisco, CA"
             onLive={live("location")}
@@ -407,14 +407,14 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
           />
           <div className="grid grid-cols-2 gap-2.5">
             <Field
-              label="LinkedIn"
+              label={T("ce.field.linkedin")}
               value={h.linkedinUrl ?? ""}
               placeholder="linkedin.com/in/…"
               onLive={live("linkedinUrl")}
               onSave={save("linkedinUrl")}
             />
             <Field
-              label="GitHub"
+              label={T("ce.field.github")}
               value={h.githubUrl ?? ""}
               placeholder="github.com/…"
               onLive={live("githubUrl")}
@@ -422,7 +422,7 @@ function PersonalDetailsCard({ resume }: { resume: ResolvedResume }) {
             />
           </div>
           <Field
-            label="Website"
+            label={T("ce.field.website")}
             value={h.websiteUrl ?? ""}
             placeholder="https://…"
             onLive={live("websiteUrl")}
@@ -458,8 +458,9 @@ function SortableBlockCard({
   const { patchBlockHeading } = useResumeState();
 
   const style = { transform: CSS.Transform.toString(transform), transition };
-  const meta = SECTION_META[block.type];
+  const meta = useSectionMeta()[block.type];
   const confirm = useConfirm();
+  const T = useT();
 
   return (
     <div
@@ -516,15 +517,14 @@ function SortableBlockCard({
           <button
             onClick={async () => {
               const ok = await confirm({
-                title: `Delete "${block.heading}"?`,
-                description:
-                  "The section is removed from this resume. Your profile data is untouched.",
-                confirmLabel: "Delete section",
+                title: `${T("ce.confirm.delete_section.title")} (${block.heading})`,
+                description: T("ce.confirm.delete_section.desc"),
+                confirmLabel: T("ce.confirm.delete_section.cta"),
                 destructive: true,
               });
               if (ok) run(() => deleteBlock(resumeId, block.id));
             }}
-            aria-label="Delete section"
+            aria-label={T("ce.confirm.delete_section.cta")}
             className="rounded p-1.5 text-[var(--on-surface-muted)] opacity-0 transition-all hover:bg-[var(--surface-sunk)] hover:text-[var(--destructive)] group-hover:opacity-100"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -676,7 +676,7 @@ function ItemsList({
   summary: (i: ResolvedBlockItem) => { title: string; sub?: string };
 }) {
   const run = useTrackedAction();
-  const meta = SECTION_META[block.type];
+  const meta = useSectionMeta()[block.type];
   const [items, setItems] = useState(block.items);
 
   useEffect(() => setItems(block.items), [block.items]);
@@ -750,6 +750,7 @@ function CollapsibleItem({
   const [open, setOpen] = useState(false);
   const run = useTrackedAction();
   const confirm = useConfirm();
+  const T = useT();
   const {
     attributes,
     listeners,
@@ -797,14 +798,14 @@ function CollapsibleItem({
         <button
           onClick={async () => {
             const ok = await confirm({
-              title: `Remove "${summary.title}"?`,
-              description: "This item is removed from the resume. Profile data is untouched.",
-              confirmLabel: "Remove",
+              title: `${T("ce.confirm.remove_item.title")} (${summary.title})`,
+              description: T("ce.confirm.remove_item.desc"),
+              confirmLabel: T("ce.confirm.remove_item.cta"),
               destructive: true,
             });
             if (ok) run(() => removeItemFromBlock(resumeId, item.id));
           }}
-          aria-label="Remove item"
+          aria-label={T("common.remove")}
           className="rounded p-1 text-[var(--on-surface-muted)] opacity-0 transition-colors hover:bg-[var(--surface-raised)] hover:text-[var(--destructive)] group-hover/item:opacity-100"
         >
           <Trash2 className="h-3.5 w-3.5" />

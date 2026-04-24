@@ -466,6 +466,30 @@
 }
 
 /* ============================================================
+   Hebrew / RTL — font fallbacks so display + body text render well.
+   Instrument Serif + Geist don't include Hebrew glyphs; the system
+   provides "David", "Frank Ruhl Libre", or falls back to SF / Arial.
+   ============================================================ */
+html[lang="he"] {
+    --font-display: "Frank Ruhl Libre", "Narkisim", "David", "Times New Roman", serif;
+    --font-ui: "Heebo", "Segoe UI", "Arial", "Helvetica", sans-serif;
+    --font-mono: "Menlo", "Consolas", monospace;
+}
+html[dir="rtl"] {
+    font-feature-settings: normal;
+}
+/* In RTL, the magic-shine button overlay sweeps the wrong way visually.
+   Flip it so the highlight still moves from start → end. */
+html[dir="rtl"] .magic-shine::after {
+    background: linear-gradient(
+        -115deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.25) 50%,
+        transparent 70%
+    );
+}
+
+/* ============================================================
    Profile / form utility classes
    Applied to profile sub-sections + import page to bring them
    in line with the editor's input style.

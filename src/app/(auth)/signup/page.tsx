@@ -13,8 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signUp, signInWithGoogle } from "../actions";
+import { useT } from "@/lib/i18n/context";
 
 export default function SignUpPage() {
+  const t = useT();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -48,10 +50,13 @@ export default function SignUpPage() {
             <span className="ml-1 inline-block h-1.5 w-1.5 self-center rounded-full bg-[var(--magic-2)]" />
           </Link>
           <CardTitle className="font-headline text-[28px] font-normal leading-none tracking-[-0.02em]">
-            Compose your <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">career</em>.
+            {t("auth.signup.title.part1")}{" "}
+            <em className="serif-ital text-[var(--magic-1)] dark:text-[var(--magic-2)]">
+              {t("auth.signup.title.italic")}
+            </em>
           </CardTitle>
           <CardDescription className="text-[var(--on-surface-muted)]">
-            Free to start. No credit card.
+            {t("auth.signup.subtitle")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -79,7 +84,7 @@ export default function SignUpPage() {
                 fill="#EA4335"
               />
             </svg>
-            Continue with Google
+            {t("auth.signup.google")}
           </Button>
 
           <div className="relative">
@@ -87,13 +92,13 @@ export default function SignUpPage() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("common.or")}</span>
             </div>
           </div>
 
           <form action={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full name</Label>
+              <Label htmlFor="fullName">{t("auth.signup.fullname")}</Label>
               <Input
                 id="fullName"
                 name="fullName"
@@ -103,7 +108,7 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("auth.login.email")}</Label>
               <Input
                 id="email"
                 name="email"
@@ -113,7 +118,7 @@ export default function SignUpPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("auth.login.password")}</Label>
               <Input
                 id="password"
                 name="password"
@@ -132,17 +137,17 @@ export default function SignUpPage() {
               className="magical-gradient magic-shine h-11 w-full rounded-full"
               disabled={loading}
             >
-              {loading ? "Creating account…" : "Create account"}
+              {loading ? t("auth.signup.submitting") : t("auth.signup.submit")}
             </Button>
           </form>
 
           <p className="text-center text-sm text-[var(--on-surface-muted)]">
-            Already have an account?{" "}
+            {t("auth.signup.have_account")}{" "}
             <Link
               href="/login"
               className="text-[var(--magic-1)] underline-offset-4 hover:underline dark:text-[var(--magic-2)]"
             >
-              Sign in
+              {t("auth.login.submit")}
             </Link>
           </p>
         </CardContent>

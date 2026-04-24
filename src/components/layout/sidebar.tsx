@@ -16,17 +16,19 @@ import {
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/app/(auth)/actions";
 import { createResume } from "@/app/(dashboard)/resumes/actions";
-
-const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Resumes", href: "/resumes", icon: FileText },
-  { label: "Job Tracker", href: "/applications", icon: Briefcase },
-  { label: "Profile", href: "/profile", icon: User },
-  { label: "Import", href: "/import", icon: Upload },
-];
+import { useT } from "@/lib/i18n/context";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const t = useT();
+
+  const navItems = [
+    { label: t("sidebar.dashboard"), href: "/dashboard", icon: LayoutDashboard },
+    { label: t("sidebar.resumes"), href: "/resumes", icon: FileText },
+    { label: t("sidebar.applications"), href: "/applications", icon: Briefcase },
+    { label: t("sidebar.profile"), href: "/profile", icon: User },
+    { label: t("sidebar.import"), href: "/import", icon: Upload },
+  ];
 
   return (
     <aside className="flex h-full w-60 flex-col bg-[var(--ink)] text-[#bec6e0]">
@@ -42,7 +44,7 @@ export function Sidebar() {
           />
         </Link>
         <p className="mt-1 text-[0.65rem] uppercase tracking-[0.16em] text-[#74777f]">
-          Your career, composed
+          {t("brand.tagline")}
         </p>
       </div>
 
@@ -55,7 +57,7 @@ export function Sidebar() {
             className="w-full magical-gradient text-white font-medium text-sm h-10 gap-2 hover:opacity-90 transition-opacity"
           >
             <Plus className="h-4 w-4" />
-            Create New Resume
+            {t("sidebar.create")}
           </Button>
         </form>
       </div>
@@ -92,7 +94,7 @@ export function Sidebar() {
             size="sm"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t("sidebar.signout")}
           </Button>
         </form>
       </div>
