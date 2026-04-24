@@ -55,7 +55,9 @@ export async function POST(req: Request) {
 
   try {
     const result = await generateText({
-      model: groq("llama-3.3-70b-versatile"),
+      // openai/gpt-oss-120b is much stronger at structured tool calling than
+      // llama-3.3-70b-versatile on Groq. Override with GROQ_MODEL if needed.
+      model: groq(process.env.GROQ_MODEL || "openai/gpt-oss-120b"),
       system: systemPrompt,
       messages,
       stopWhen: stepCountIs(20),
@@ -486,10 +488,26 @@ export async function POST(req: Request) {
       actions,
     });
   } catch (error) {
+    // Surface Groq's `failed_generation` body so we can see what the model
+    // actually emitted when tool-call JSON breaks.
     console.error("Chat error:", error);
+    const err = error as {
+      message?: string;
+      responseBody?: string;
+      data?: unknown;
+      cause?: { message?: string; responseBody?: string };
+    };
+    if (err.responseBody) console.error("Groq responseBody:", err.responseBody);
+    if (err.cause?.responseBody)
+      console.error("Groq cause.responseBody:", err.cause.responseBody);
+    if (err.data) console.error("Groq data:", JSON.stringify(err.data, null, 2));
+
     return Response.json(
-      { error: error instanceof Error ? error.message : "Chat failed" },
-      { status: 500 }
+      {
+        error: err.message ?? "Chat failed",
+        detail: err.responseBody ?? err.cause?.responseBody ?? null,
+      },
+      { status: 500 },
     );
   }
 }
