@@ -70,7 +70,11 @@ import type {
 function useTrackedAction() {
   const router = useRouter();
   const [, start] = useTransition();
-  return (fn: () => Promise<void>) => {
+  // Accept any returning promise — call sites don't read the value, but
+  // some server actions started returning structured data (e.g.
+  // addItemToBlock returning the new itemId) and signature mismatch
+  // shouldn't block usage here.
+  return (fn: () => Promise<unknown>) => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("resumi:save-start"));
     }

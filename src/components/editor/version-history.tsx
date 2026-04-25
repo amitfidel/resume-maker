@@ -91,7 +91,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
         }
       });
     },
-    [resumeId, loadVersions, onRestoreComplete, confirm]
+    [resumeId, loadVersions, onRestoreComplete, confirm, t]
   );
 
   const handleDelete = useCallback(
@@ -109,7 +109,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
         await loadVersions();
       });
     },
-    [resumeId, loadVersions, confirm]
+    [resumeId, loadVersions, confirm, t]
   );
 
   if (versions === null) {

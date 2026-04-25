@@ -20,6 +20,7 @@ import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { BlockType, SourceType } from "@/lib/resume/types";
+import { stableStringify } from "@/lib/json/stable";
 
 // Map block types to their source types and default headings
 const BLOCK_SOURCE_MAP: Record<
@@ -725,19 +726,23 @@ export async function addItemToBlock(resumeId: string, blockId: string) {
       break;
   }
 
-  await db.insert(resumeBlockItems).values({
-    blockId,
-    sourceType,
-    sourceId: sourceId!,
-    sortOrder: nextOrder,
-    isVisible: true,
-    overrides:
-      sourceType === "custom"
-        ? { title: "New Item", text: "Description" }
-        : {},
-  });
+  const [created] = await db
+    .insert(resumeBlockItems)
+    .values({
+      blockId,
+      sourceType,
+      sourceId: sourceId!,
+      sortOrder: nextOrder,
+      isVisible: true,
+      overrides:
+        sourceType === "custom"
+          ? { title: "New Item", text: "Description" }
+          : {},
+    })
+    .returning();
 
   revalidatePath(`/resumes/${resumeId}/edit`);
+  return { itemId: created.id };
 }
 
 /**
@@ -776,30 +781,40 @@ export async function addBulletToItem(
   });
   if (!item) return;
 
+  let bulletId: string | undefined;
   if (item.sourceType === "work_experience") {
     const [{ maxOrder }] = await db
       .select({ maxOrder: max(experienceBullets.sortOrder) })
       .from(experienceBullets)
       .where(eq(experienceBullets.experienceId, item.sourceId));
-    await db.insert(experienceBullets).values({
-      experienceId: item.sourceId,
-      // Empty so the canvas shows a localized placeholder.
-      text: "",
-      sortOrder: (maxOrder ?? -1) + 1,
-    });
+    const [created] = await db
+      .insert(experienceBullets)
+      .values({
+        experienceId: item.sourceId,
+        // Empty so the canvas shows a localized placeholder.
+        text: "",
+        sortOrder: (maxOrder ?? -1) + 1,
+      })
+      .returning();
+    bulletId = created.id;
   } else if (item.sourceType === "project") {
     const [{ maxOrder }] = await db
       .select({ maxOrder: max(projectBullets.sortOrder) })
       .from(projectBullets)
       .where(eq(projectBullets.projectId, item.sourceId));
-    await db.insert(projectBullets).values({
-      projectId: item.sourceId,
-      text: "",
-      sortOrder: (maxOrder ?? -1) + 1,
-    });
+    const [created] = await db
+      .insert(projectBullets)
+      .values({
+        projectId: item.sourceId,
+        text: "",
+        sortOrder: (maxOrder ?? -1) + 1,
+      })
+      .returning();
+    bulletId = created.id;
   }
 
   revalidatePath(`/resumes/${resumeId}/edit`);
+  return bulletId ? { bulletId } : undefined;
 }
 
 /**
@@ -1274,29 +1289,6 @@ const UNDO_TAG = "auto_undo";
 // could rack up hundreds. 30 entries is enough for "I'd like to walk
 // back the last few changes" without keeping the entire edit history.
 const UNDO_HISTORY_LIMIT = 30;
-
-/**
- * Stable JSON.stringify with sorted object keys. Two structurally
- * identical objects whose keys were inserted in different orders would
- * otherwise serialize differently and defeat the dedup check.
- */
-function stableStringify(value: unknown): string {
-  if (value === null || typeof value !== "object") {
-    return JSON.stringify(value);
-  }
-  if (Array.isArray(value)) {
-    return "[" + value.map(stableStringify).join(",") + "]";
-  }
-  const obj = value as Record<string, unknown>;
-  const keys = Object.keys(obj).sort();
-  return (
-    "{" +
-    keys
-      .map((k) => JSON.stringify(k) + ":" + stableStringify(obj[k]))
-      .join(",") +
-    "}"
-  );
-}
 
 /**
  * Snapshot the current resume state as an auto_undo entry. Returns the

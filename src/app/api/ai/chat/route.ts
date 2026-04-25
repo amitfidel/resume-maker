@@ -4,6 +4,7 @@ import { z } from "zod";
 import { buildChatAgentPrompt } from "@/lib/ai/prompts/chat-agent";
 import { resolveResume } from "@/lib/resume/resolve";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/ai/rate-limit";
 import { db } from "@/db";
 import {
   resumes,
@@ -12,6 +13,17 @@ import {
 } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+
+// Cap on the request body. A normal chat turn is well under 30 KB even
+// with a long thread; 200 KB leaves headroom for a pasted job description
+// without letting someone POST a 5 MB file and burn Groq tokens.
+const MAX_BODY_BYTES = 200 * 1024;
+// Cap on individual message content — keep per-message size bounded so
+// no single user paste blows up the prompt.
+const MAX_MESSAGE_CHARS = 16_000;
+// Cap on full thread length — past this we'd be re-sending an enormous
+// prompt every turn anyway.
+const MAX_MESSAGES = 40;
 import {
   addStandardSection,
   addCustomSection,
@@ -34,7 +46,78 @@ export async function POST(req: Request) {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const { resumeId, messages } = await req.json();
+  // Per-user rate limit: 10 requests / 60s, ~1 every 6s sustained.
+  // Generous for hand-driven chat, tight enough to stop a stuck retry
+  // loop or a script from racking up Groq tokens.
+  const rl = rateLimit(`chat:${user.id}`, 10, 10 / 60);
+  if (!rl.ok) {
+    return new Response(
+      JSON.stringify({
+        error: `Rate limit. Try again in ${rl.retryAfterSec}s.`,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(rl.retryAfterSec),
+        },
+      },
+    );
+  }
+
+  // Hard cap the body before parsing. Without this a 100 MB upload
+  // would tie up the route and OOM-kill the worker before we got a
+  // chance to validate.
+  const lenHeader = req.headers.get("content-length");
+  if (lenHeader && Number(lenHeader) > MAX_BODY_BYTES) {
+    return new Response(
+      JSON.stringify({ error: "Request body too large" }),
+      { status: 413, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  let body: { resumeId?: unknown; messages?: unknown };
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON body" }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const resumeId = typeof body.resumeId === "string" ? body.resumeId : null;
+  const rawMessages = Array.isArray(body.messages) ? body.messages : null;
+  if (!resumeId || !rawMessages) {
+    return new Response(
+      JSON.stringify({ error: "resumeId and messages are required" }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  if (rawMessages.length === 0 || rawMessages.length > MAX_MESSAGES) {
+    return new Response(
+      JSON.stringify({
+        error: `messages must be 1..${MAX_MESSAGES} entries`,
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+  // Coerce + size-cap each message. Anything past MAX_MESSAGE_CHARS is
+  // truncated rather than rejected — better UX than failing a
+  // legitimate paste outright.
+  const messages = rawMessages.map((m) => {
+    const role =
+      (m as { role?: unknown }).role === "user" ||
+      (m as { role?: unknown }).role === "assistant"
+        ? ((m as { role: "user" | "assistant" }).role)
+        : "user";
+    const rawContent = (m as { content?: unknown }).content;
+    const content =
+      typeof rawContent === "string"
+        ? rawContent.slice(0, MAX_MESSAGE_CHARS)
+        : "";
+    return { role, content };
+  });
 
   // Verify ownership
   const resume = await db.query.resumes.findFirst({
@@ -74,6 +157,11 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages,
       stopWhen: stepCountIs(20),
+      // Forward the client's AbortSignal — when the user closes the
+      // panel mid-stream, the upstream Groq call is cancelled instead
+      // of running to completion and burning tokens after no one's
+      // listening.
+      abortSignal: req.signal,
       tools: {
         updateSummary: tool({
           description: "Rewrite or set the resume's professional summary.",
@@ -338,19 +426,12 @@ export async function POST(req: Request) {
               .describe("The section ID to add the item to"),
           }),
           execute: async ({ blockId }) => {
-            await addItemToBlock(resumeId, blockId);
-            // Fetch the newest item for this block so the model has its ID
-            const items = await db.query.resumeBlockItems.findMany({
-              where: eq(resumeBlockItems.blockId, blockId),
-              orderBy: (t, { desc }) => [desc(t.createdAt)],
-              limit: 1,
-            });
-            const newItemId = items[0]?.id;
+            const result = await addItemToBlock(resumeId, blockId);
             actions.push({
               tool: "addItem",
               description: "Added a new item to a section",
             });
-            return { success: true, itemId: newItemId };
+            return { success: true, itemId: result?.itemId };
           },
         }),
 
@@ -407,37 +488,23 @@ export async function POST(req: Request) {
               ),
           }),
           execute: async ({ itemId, text }) => {
-            await addBulletToItem(resumeId, itemId);
-            // Look up the bullet that was just created
-            const item = await db.query.resumeBlockItems.findFirst({
-              where: eq(resumeBlockItems.id, itemId),
-            });
-            if (!item) return { error: "Item not found" };
+            const result = await addBulletToItem(resumeId, itemId);
+            const bulletId = result?.bulletId;
 
-            let bulletId: string | undefined;
-            if (item.sourceType === "work_experience") {
-              const { experienceBullets } = await import("@/db/schema");
-              const rows = await db.query.experienceBullets.findMany({
-                where: eq(experienceBullets.experienceId, item.sourceId),
-                orderBy: (t, { desc }) => [desc(t.sortOrder)],
-                limit: 1,
+            // If the model supplied text, write it to the just-created
+            // bullet. Look up the source type to know which table.
+            if (text && bulletId) {
+              const item = await db.query.resumeBlockItems.findFirst({
+                where: eq(resumeBlockItems.id, itemId),
               });
-              bulletId = rows[0]?.id;
-              if (text && bulletId) {
+              if (item?.sourceType === "work_experience") {
+                const { experienceBullets } = await import("@/db/schema");
                 await db
                   .update(experienceBullets)
                   .set({ text, updatedAt: new Date() })
                   .where(eq(experienceBullets.id, bulletId));
-              }
-            } else if (item.sourceType === "project") {
-              const { projectBullets } = await import("@/db/schema");
-              const rows = await db.query.projectBullets.findMany({
-                where: eq(projectBullets.projectId, item.sourceId),
-                orderBy: (t, { desc }) => [desc(t.sortOrder)],
-                limit: 1,
-              });
-              bulletId = rows[0]?.id;
-              if (text && bulletId) {
+              } else if (item?.sourceType === "project") {
+                const { projectBullets } = await import("@/db/schema");
                 await db
                   .update(projectBullets)
                   .set({ text, updatedAt: new Date() })

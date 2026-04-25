@@ -106,6 +106,15 @@ export async function signInWithMagicLink(formData: FormData) {
   const supabase = await createClient();
   const origin = (await headers()).get("origin");
   const email = formData.get("email") as string;
+  // Optional `next` param so the magic link can land on the page the
+  // user was originally trying to reach (e.g. middleware-bounced from
+  // /resumes/abc/edit). Validated against open-redirect by the
+  // /auth/callback route — we don't need to revalidate here.
+  const rawNext = formData.get("next");
+  const nextParam =
+    typeof rawNext === "string" && rawNext.startsWith("/")
+      ? `?next=${encodeURIComponent(rawNext)}`
+      : "";
 
   if (!email) {
     return { error: "Email is required" };
@@ -116,7 +125,7 @@ export async function signInWithMagicLink(formData: FormData) {
     options: {
       // Existing /auth/callback already handles the `code` param Supabase
       // returns from the link click — same flow as OAuth.
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback${nextParam}`,
     },
   });
 

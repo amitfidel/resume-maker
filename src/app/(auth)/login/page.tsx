@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,10 +23,24 @@ import { useT } from "@/lib/i18n/context";
 
 export default function LoginPage() {
   const t = useT();
+  // Middleware sets ?redirectTo=/path/the/user/wanted when bouncing an
+  // unauthenticated user to /login. Carry it through magic-link sign-in
+  // so the user lands where they intended after clicking the email.
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirectTo");
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : null;
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
+  // The password field is uncontrolled (read from FormData). For
+  // magic-link / forgot-password flows the password is irrelevant —
+  // clear it after success so a user who walked away doesn't leave
+  // their password populated for the next person on the keyboard.
+  const passwordRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -58,12 +73,14 @@ export default function LoginPage() {
     setInfo(null);
     const fd = new FormData();
     fd.set("email", email);
+    if (safeRedirect) fd.set("next", safeRedirect);
     const result = await signInWithMagicLink(fd);
     setLoading(false);
     if (result?.error) {
       setError(result.error);
     } else {
       setInfo(t("auth.login.magic_sent"));
+      if (passwordRef.current) passwordRef.current.value = "";
     }
   }
 
@@ -83,6 +100,7 @@ export default function LoginPage() {
       setError(result.error);
     } else {
       setInfo(t("auth.login.reset_sent"));
+      if (passwordRef.current) passwordRef.current.value = "";
     }
   }
 
@@ -169,6 +187,7 @@ export default function LoginPage() {
                 </button>
               </div>
               <Input
+                ref={passwordRef}
                 id="password"
                 name="password"
                 type="password"

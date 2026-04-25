@@ -44,6 +44,18 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const baseInputRef = useRef<string>("");
+  // AbortController for the in-flight chat fetch. Closing the panel or
+  // unmounting cancels — server-side this propagates into streamText
+  // and stops the upstream Groq call from billing tokens for output
+  // nobody will read.
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Abort on unmount.
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   // Speech recognition - appends transcripts to the input
   const handleTranscript = useCallback(
@@ -94,10 +106,17 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
       setInput("");
       setIsLoading(true);
 
+      // Cancel any prior in-flight call (very rare — UI disables while
+      // loading — but defensive against double-fires).
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       try {
         const res = await fetch("/api/ai/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             resumeId,
             messages: newMessages.map((m) => ({
@@ -145,7 +164,6 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
           let buffer = "";
           let actionCount = 0;
 
-          // eslint-disable-next-line no-constant-condition
           while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -226,6 +244,11 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
           }
         }
       } catch (err) {
+        // AbortError = user closed the panel / sent a new message — no
+        // surface, just stop. Anything else is a real connection error.
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
         console.error("Chat error:", err);
         setMessages((prev) => [
           ...prev,
