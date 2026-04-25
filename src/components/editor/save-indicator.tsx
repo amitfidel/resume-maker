@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/context";
 
 /**
  * Listens for `resumi:save-start` / `resumi:save-end` window events
@@ -10,6 +11,7 @@ import { useEffect, useState } from "react";
 export function SaveIndicator() {
   const [active, setActive] = useState(0);
   const [justSaved, setJustSaved] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     const start = () => setActive((n) => n + 1);
@@ -48,7 +50,7 @@ export function SaveIndicator() {
               : "bg-[var(--success)]"
         }`}
       />
-      {saving ? "Saving…" : justSaved ? "Saved" : "Saved"}
+      {saving ? t("common.saving") : t("common.saved")}
     </span>
   );
 }

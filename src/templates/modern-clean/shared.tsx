@@ -1,4 +1,8 @@
+"use client";
+
 import type { ResolvedBlock } from "@/lib/resume/types";
+import { useT } from "@/lib/i18n/context";
+import { localizedHeading } from "@/lib/i18n/dictionary";
 
 export function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
@@ -17,9 +21,10 @@ export function SectionWrapper({
   block: ResolvedBlock;
   children: React.ReactNode;
 }) {
+  const t = useT();
   return (
     <section className="mt-5">
-      <SectionHeading>{block.heading}</SectionHeading>
+      <SectionHeading>{localizedHeading(block.heading, block.type, t)}</SectionHeading>
       {children}
     </section>
   );

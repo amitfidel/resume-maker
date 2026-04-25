@@ -5,7 +5,7 @@ import { EditableText } from "./editable-text";
 import { EditableDateRange } from "./editable-date-range";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useT } from "@/lib/i18n/context";
-import { DEFAULT_HEADINGS } from "@/lib/resume/types";
+import { localizedHeading } from "@/lib/i18n/dictionary";
 import {
   updateSummary as _updateSummary,
   updateBlockHeading as _updateBlockHeading,
@@ -59,22 +59,6 @@ import { Plus, Trash2 } from "lucide-react";
 type Props = {
   resume: ResolvedResume;
 };
-
-/**
- * If the user hasn't overridden a block's heading, fall back to a localized
- * default. We compare against the English DEFAULT_HEADINGS so legacy resumes
- * (created before i18n) still translate.
- */
-function localizedHeading(
-  heading: string,
-  type: keyof typeof DEFAULT_HEADINGS,
-  t: (k: string) => string,
-): string {
-  if (heading === DEFAULT_HEADINGS[type] || heading === "") {
-    return t(`canvas.heading.${type}`);
-  }
-  return heading;
-}
 
 /**
  * Match legacy seed values written by older versions of addItemToBlock
@@ -901,7 +885,7 @@ function EducationCard({
           placeholder={t("canvas.ph.institution")}
           style={{ color: style.textColor }}
         />
-        <span style={{ color: style.mutedColor }}> · GPA: </span>
+        <span style={{ color: style.mutedColor }}> · {t("editor.gpa")}: </span>
         <EditableText
           value={edu.gpa || ""}
           onSave={setField("gpa")}

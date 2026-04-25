@@ -155,14 +155,14 @@ export function DashboardView({
                 <div className="mx-3.5 mt-3.5 aspect-[8.5/11] overflow-hidden rounded bg-white shadow-[inset_0_0_0_1px_var(--border-ghost),0_4px_16px_-6px_rgba(14,18,32,0.1)]">
                   <div className="h-full px-4 py-3.5 text-[4.5px] leading-[1.4] text-[#0e1220]">
                     <h5 className="font-headline text-[14px] leading-none tracking-[-0.01em]">
-                      {r.title}
+                      {r.title === "Untitled Resume" ? t("editor.untitled") : r.title}
                     </h5>
                     <div className="mt-1.5 h-[2px] w-[40%] rounded-[1px] bg-[#e3ddd0]" />
                   </div>
                 </div>
                 <div className="px-4 pb-4 pt-3.5">
                   <p className="truncate text-[14px] font-medium text-[var(--on-surface)]">
-                    {r.title}
+                    {r.title === "Untitled Resume" ? t("editor.untitled") : r.title}
                   </p>
                   <p className="mt-1 text-[12px] text-[var(--on-surface-muted)]">
                     {new Date(r.updatedAt).toLocaleDateString()}

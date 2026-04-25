@@ -1,5 +1,9 @@
+"use client";
+
 import type { ResolvedResume, ResolvedBlock, ResolvedExperience, ResolvedEducation, ResolvedSkill, ResolvedProject, ResolvedCertification } from "@/lib/resume/types";
 import { formatDateRange } from "@/templates/modern-clean/shared";
+import { useT } from "@/lib/i18n/context";
+import { localizedHeading } from "@/lib/i18n/dictionary";
 
 type TemplateProps = {
   resume: ResolvedResume;
@@ -7,6 +11,7 @@ type TemplateProps = {
 };
 
 export function ClassicProfessionalTemplate({ resume, mode }: TemplateProps) {
+  const t = useT();
   const visibleBlocks = resume.blocks.filter((b) => b.isVisible);
 
   return (
@@ -35,7 +40,7 @@ export function ClassicProfessionalTemplate({ resume, mode }: TemplateProps) {
       {/* Summary */}
       {resume.summary && (
         <section className="mt-4">
-          <SectionTitle>Professional Summary</SectionTitle>
+          <SectionTitle>{t("canvas.heading.summary")}</SectionTitle>
           <p className="text-sm text-gray-700 italic">{resume.summary}</p>
         </section>
       )}
@@ -58,11 +63,12 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function ClassicBlock({ block }: { block: ResolvedBlock }) {
+  const t = useT();
   const items = block.items.filter((i) => i.isVisible);
 
   return (
     <section className="mt-4">
-      <SectionTitle>{block.heading}</SectionTitle>
+      <SectionTitle>{localizedHeading(block.heading, block.type, t)}</SectionTitle>
 
       {block.type === "experience" && (
         <div className="space-y-3">

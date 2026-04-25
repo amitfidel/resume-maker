@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Bookmark, Loader2 } from "lucide-react";
 import { saveResumeVersion } from "@/app/(dashboard)/resumes/actions";
+import { useT } from "@/lib/i18n/context";
 
 type Props = {
   resumeId: string;
@@ -25,6 +26,7 @@ export function SaveVersionButton({ resumeId }: Props) {
   const [summary, setSummary] = useState("");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const t = useT();
 
   const handleSave = () => {
     if (!summary.trim()) return;
@@ -48,18 +50,19 @@ export function SaveVersionButton({ resumeId }: Props) {
         }
       >
         <Bookmark className="h-4 w-4" />
-        Save Version
+        {t("editor.save_version")}
       </DialogTrigger>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle className="font-headline">Save a Version</DialogTitle>
+          <DialogTitle className="font-headline">
+            {t("editor.save_version.dialog_title")}
+          </DialogTitle>
           <DialogDescription>
-            Create a snapshot you can return to later. Good for checkpointing
-            before big changes.
+            {t("editor.save_version.dialog_desc")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
-          <Label htmlFor="summary">What&apos;s different about this version?</Label>
+          <Label htmlFor="summary">{t("editor.save_version.label")}</Label>
           <Input
             id="summary"
             value={summary}
@@ -67,7 +70,7 @@ export function SaveVersionButton({ resumeId }: Props) {
             onKeyDown={(e) => {
               if (e.key === "Enter" && summary.trim()) handleSave();
             }}
-            placeholder="e.g. Tailored for Google SWE role"
+            placeholder={t("editor.save_version.placeholder")}
             autoFocus
             className="border-ghost"
           />
@@ -81,14 +84,14 @@ export function SaveVersionButton({ resumeId }: Props) {
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
+                {t("editor.saving")}
               </>
             ) : (
-              "Save Version"
+              t("editor.save_version")
             )}
           </Button>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {t("common.cancel")}
           </Button>
         </div>
       </DialogContent>

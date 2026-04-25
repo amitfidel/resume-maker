@@ -2,6 +2,7 @@
  * Template renderer used by PDF export (non-interactive).
  * Matches the visual layout of InteractiveResume but without edit handles.
  */
+"use client";
 
 import type {
   ResolvedResume,
@@ -17,6 +18,8 @@ import type {
 import type { TemplateStyle } from "./styles";
 import { getStyle } from "./styles";
 import { formatDateRange } from "./modern-clean/shared";
+import { useT } from "@/lib/i18n/context";
+import { localizedHeading } from "@/lib/i18n/dictionary";
 
 export function TemplateRenderer({ resume }: { resume: ResolvedResume }) {
   const style = getStyle(resume.templateId);
@@ -75,6 +78,7 @@ function TwoColumnRender({
   resume: ResolvedResume;
   style: TemplateStyle;
 }) {
+  const t = useT();
   const visibleBlocks = resume.blocks.filter((b) => b.isVisible);
   const sidebarBlocks = visibleBlocks.filter(
     (b) => b.type === "skills" || b.type === "certifications"
@@ -123,7 +127,7 @@ function TwoColumnRender({
         )}
 
         <div style={{ marginTop: "1.5rem" }}>
-          <RenderSidebarHeading style={style}>Contact</RenderSidebarHeading>
+          <RenderSidebarHeading style={style}>{t("canvas.contact")}</RenderSidebarHeading>
           <div style={{ fontSize: "0.75rem" }}>
             {resume.header.email && <div>{resume.header.email}</div>}
             {resume.header.phone && <div>{resume.header.phone}</div>}
@@ -135,7 +139,9 @@ function TwoColumnRender({
 
         {sidebarBlocks.map((block) => (
           <div key={block.id} style={{ marginTop: "1.5rem" }}>
-            <RenderSidebarHeading style={style}>{block.heading}</RenderSidebarHeading>
+            <RenderSidebarHeading style={style}>
+              {localizedHeading(block.heading, block.type, t)}
+            </RenderSidebarHeading>
             {block.type === "skills" && (
               <RenderSidebarSkills items={block.items.filter((i) => i.isVisible)} style={style} />
             )}
@@ -150,7 +156,9 @@ function TwoColumnRender({
       <div style={{ flex: 1, padding: "15mm" }}>
         {resume.summary && (
           <section>
-            <RenderSectionHeading style={style}>Summary</RenderSectionHeading>
+            <RenderSectionHeading style={style}>
+              {t("canvas.heading.summary")}
+            </RenderSectionHeading>
             <p style={{ fontSize: "0.9em" }}>{resume.summary}</p>
           </section>
         )}
@@ -286,10 +294,13 @@ function RenderSidebarHeading({
 }
 
 function RenderBlock({ block, style }: { block: ResolvedBlock; style: TemplateStyle }) {
+  const t = useT();
   const items = block.items.filter((i) => i.isVisible);
   return (
     <section style={{ marginTop: style.sectionSpacing }}>
-      <RenderSectionHeading style={style}>{block.heading}</RenderSectionHeading>
+      <RenderSectionHeading style={style}>
+        {localizedHeading(block.heading, block.type, t)}
+      </RenderSectionHeading>
 
       {block.type === "experience" && <RenderExperience items={items} style={style} />}
       {block.type === "education" && <RenderEducation items={items} style={style} />}

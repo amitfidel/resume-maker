@@ -126,11 +126,14 @@ export function ResumesView({ firstName, resumes }: Props) {
                 className="mx-3.5 mt-3.5 aspect-[8.5/11] overflow-hidden rounded shadow-[inset_0_0_0_1px_var(--border-ghost),0_4px_16px_-6px_rgba(14,18,32,0.1)]"
                 style={{ background: "white" }}
               >
-                <MiniPaper title={resume.title} variant={idToVariant(resume.id)} />
+                <MiniPaper
+                  title={resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
+                  variant={idToVariant(resume.id)}
+                />
               </div>
               <div className="px-4 pb-4 pt-3.5">
                 <div className="truncate text-[14px] font-medium text-[var(--on-surface)]">
-                  {resume.title}
+                  {resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
                 </div>
                 <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[var(--on-surface-muted)]">
                   <span

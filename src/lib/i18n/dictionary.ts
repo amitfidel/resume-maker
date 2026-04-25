@@ -149,6 +149,16 @@ const en: Dict = {
   "editor.tailor": "Tailor",
   "editor.review": "Review",
   "editor.save_version": "Save Version",
+  "editor.save_version.dialog_title": "Save a Version",
+  "editor.save_version.dialog_desc":
+    "Create a snapshot you can return to later. Good for checkpointing before big changes.",
+  "editor.save_version.label": "What's different about this version?",
+  "editor.save_version.placeholder": "e.g. Tailored for Google SWE role",
+  "editor.saving": "Saving…",
+  "editor.untitled": "Untitled Resume",
+  "editor.gpa": "GPA",
+  "templates.dialog.title": "Pick a template",
+  "templates.dialog.desc": "Your content stays the same. Switch any time.",
 
   // --- content editor ---
   "ce.eyebrow": "Content",
@@ -270,6 +280,7 @@ const en: Dict = {
   "canvas.ph.issuer": "Issuer",
   "canvas.ph.issue_date": "Issue date",
   "canvas.ph.bullet": "Add a bullet point…",
+  "canvas.contact": "Contact",
   // Default headings — translated when block.heading equals the English default
   "canvas.heading.summary": "Summary",
   "canvas.heading.experience": "Work Experience",
@@ -414,6 +425,16 @@ const he: Dict = {
   "editor.tailor": "התאמה",
   "editor.review": "סקירה",
   "editor.save_version": "שמור גרסה",
+  "editor.save_version.dialog_title": "שמירת גרסה",
+  "editor.save_version.dialog_desc":
+    "צילום מצב שתוכל לחזור אליו אחר כך. שימושי לפני שינויים גדולים.",
+  "editor.save_version.label": "מה שונה בגרסה הזו?",
+  "editor.save_version.placeholder": "למשל: התאמה לתפקיד מהנדס תוכנה ב־Google",
+  "editor.saving": "שומר…",
+  "editor.untitled": "קורות חיים ללא שם",
+  "editor.gpa": "ממוצע",
+  "templates.dialog.title": "בחר תבנית",
+  "templates.dialog.desc": "התוכן שלך נשאר זהה. אפשר להחליף בכל רגע.",
 
   // --- content editor ---
   "ce.eyebrow": "תוכן",
@@ -535,6 +556,7 @@ const he: Dict = {
   "canvas.ph.issuer": "מנפיק",
   "canvas.ph.issue_date": "תאריך הנפקה",
   "canvas.ph.bullet": "הוסף נקודה…",
+  "canvas.contact": "פרטי קשר",
   // Default headings (translate if user hasn't overridden)
   "canvas.heading.summary": "סיכום",
   "canvas.heading.experience": "ניסיון תעסוקתי",
@@ -549,4 +571,29 @@ export const messages: Record<Locale, Dict> = { en, he };
 
 export function translate(locale: Locale, key: string): string {
   return messages[locale]?.[key] ?? messages.en[key] ?? key;
+}
+
+/**
+ * If a block heading is the English default for its type, return the
+ * localized version. Custom user headings pass through unchanged.
+ */
+const ENGLISH_DEFAULT_HEADINGS: Record<string, string> = {
+  header: "",
+  summary: "Summary",
+  experience: "Work Experience",
+  education: "Education",
+  skills: "Skills",
+  projects: "Projects",
+  certifications: "Certifications",
+  custom: "Additional",
+};
+export function localizedHeading(
+  heading: string,
+  type: string,
+  t: (k: string) => string,
+): string {
+  if (heading === ENGLISH_DEFAULT_HEADINGS[type] || heading === "") {
+    return t(`canvas.heading.${type}`);
+  }
+  return heading;
 }

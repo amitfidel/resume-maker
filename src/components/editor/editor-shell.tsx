@@ -55,7 +55,7 @@ export function EditorShell({ resume }: Props) {
             </Button>
           </Link>
           <h1 className="font-headline rounded-md px-2 py-1 text-[18px] tracking-[-0.01em] text-[var(--on-surface)] transition-colors hover:bg-[var(--surface-sunk)]">
-            {resume.title}
+            {resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
           </h1>
           <SaveIndicator />
           <div className="ms-2 inline-flex rounded-full bg-[var(--surface-sunk)] p-[3px]">
