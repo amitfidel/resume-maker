@@ -27,15 +27,31 @@ function initialLocale(): Locale {
   return "en";
 }
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+export function I18nProvider({
+  children,
+  initialLocale: initialLocaleProp,
+}: {
+  children: React.ReactNode;
+  /**
+   * Server-side hint that wins over localStorage. Used by the PDF render
+   * route, which passes the locale via URL because Puppeteer's headless
+   * browser has no access to the user's localStorage.
+   */
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocaleProp ?? "en");
   const [hydrated, setHydrated] = useState(false);
 
-  // Hydrate from localStorage on mount
+  // Hydrate from localStorage on mount, unless an explicit initialLocale was
+  // passed (server-side overrides client persistence).
   useEffect(() => {
+    if (initialLocaleProp) {
+      setHydrated(true);
+      return;
+    }
     setLocaleState(initialLocale());
     setHydrated(true);
-  }, []);
+  }, [initialLocaleProp]);
 
   // Apply lang + dir + persist whenever locale changes (post-hydration)
   useEffect(() => {
@@ -43,10 +59,13 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     root.lang = locale;
     root.dir = locale === "he" ? "rtl" : "ltr";
+    // Don't persist when running in a server-primed context (e.g., PDF
+    // render); the user's main session shouldn't be affected.
+    if (initialLocaleProp) return;
     try {
       localStorage.setItem(STORAGE_KEY, locale);
     } catch {}
-  }, [locale, hydrated]);
+  }, [locale, hydrated, initialLocaleProp]);
 
   const ctx: Ctx = {
     locale,

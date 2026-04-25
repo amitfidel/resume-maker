@@ -5,10 +5,14 @@ import { eq, and } from "drizzle-orm";
 import { headers } from "next/headers";
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const url = new URL(req.url);
+  // Forward the user's UI locale (set in localStorage on the client) into
+  // the headless render — Puppeteer can't see localStorage.
+  const locale = url.searchParams.get("locale") === "he" ? "he" : "en";
 
   // Auth check
   const supabase = await createClient();
@@ -42,9 +46,9 @@ export async function GET(
     const headersList = await headers();
     const host = headersList.get("host") ?? "localhost:3001";
     const protocol = host.startsWith("localhost") ? "http" : "https";
-    const renderUrl = `${protocol}://${host}/resume-render/${id}`;
+    const renderUrl = `${protocol}://${host}/resume-render/${id}?locale=${locale}`;
 
-    await page.goto(renderUrl, { waitUntil: "networkidle0", timeout: 15000 });
+    await page.goto(renderUrl, { waitUntil: "networkidle0", timeout: 30000 });
 
     const pdf = await page.pdf({
       format: "A4",

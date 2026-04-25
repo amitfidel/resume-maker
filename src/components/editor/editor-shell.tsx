@@ -16,7 +16,7 @@ import { VersionHistory } from "./version-history";
 import { SaveVersionButton } from "./save-version-button";
 import { SaveIndicator } from "./save-indicator";
 import { TemplateRenderer } from "@/templates/renderer";
-import { useT } from "@/lib/i18n/context";
+import { useT, useI18n } from "@/lib/i18n/context";
 import type { ResolvedResume } from "@/lib/resume/types";
 
 type RightPanel = "none" | "ai-review" | "job-tailor" | "ai-chat";
@@ -31,6 +31,7 @@ export function EditorShell({ resume }: Props) {
   const [activeTab, setActiveTab] = useState<ViewTab>("editor");
   const router = useRouter();
   const t = useT();
+  const { locale } = useI18n();
 
   const togglePanel = (panel: RightPanel) => {
     setRightPanel((prev) => (prev === panel ? "none" : panel));
@@ -118,7 +119,7 @@ export function EditorShell({ resume }: Props) {
               </Button>
             </>
           )}
-          <a href={`/api/pdf/${resume.id}`} download>
+          <a href={`/api/pdf/${resume.id}?locale=${locale}`} download>
             <Button
               size="sm"
               className="magic-shine h-9 gap-2 rounded-full bg-[var(--ink)] px-4 text-[var(--cream)] hover:-translate-y-px hover:bg-[var(--ink)]"
