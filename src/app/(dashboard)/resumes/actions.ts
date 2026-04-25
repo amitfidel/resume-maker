@@ -571,12 +571,15 @@ export async function addItemToBlock(resumeId: string, blockId: string) {
   // Create a profile item based on the block type
   switch (block.blockType) {
     case "experience": {
+      // Empty strings instead of placeholder text — the canvas/editor render
+      // localized placeholders when the field is empty. Writing real-looking
+      // values like "Job Title" leaves stale English on Hebrew resumes.
       const [exp] = await db
         .insert(workExperiences)
         .values({
           profileId: profile.id,
-          company: "Company",
-          title: "Job Title",
+          company: "",
+          title: "",
           startDate: new Date().toISOString().split("T")[0],
         })
         .returning();
@@ -589,8 +592,8 @@ export async function addItemToBlock(resumeId: string, blockId: string) {
         .insert(education)
         .values({
           profileId: profile.id,
-          institution: "University",
-          degree: "Degree",
+          institution: "",
+          degree: "",
         })
         .returning();
       sourceType = "education";
@@ -602,8 +605,8 @@ export async function addItemToBlock(resumeId: string, blockId: string) {
         .insert(skills)
         .values({
           profileId: profile.id,
-          name: "New Skill",
-          category: "Other",
+          name: "",
+          category: "",
         })
         .returning();
       sourceType = "skill";
@@ -615,7 +618,7 @@ export async function addItemToBlock(resumeId: string, blockId: string) {
         .insert(projects)
         .values({
           profileId: profile.id,
-          name: "Project Name",
+          name: "",
         })
         .returning();
       sourceType = "project";
@@ -627,7 +630,7 @@ export async function addItemToBlock(resumeId: string, blockId: string) {
         .insert(certifications)
         .values({
           profileId: profile.id,
-          name: "Certification Name",
+          name: "",
         })
         .returning();
       sourceType = "certification";
@@ -700,7 +703,8 @@ export async function addBulletToItem(
       .where(eq(experienceBullets.experienceId, item.sourceId));
     await db.insert(experienceBullets).values({
       experienceId: item.sourceId,
-      text: "New accomplishment or responsibility",
+      // Empty so the canvas shows a localized placeholder.
+      text: "",
       sortOrder: (maxOrder ?? -1) + 1,
     });
   } else if (item.sourceType === "project") {
@@ -710,7 +714,7 @@ export async function addBulletToItem(
       .where(eq(projectBullets.projectId, item.sourceId));
     await db.insert(projectBullets).values({
       projectId: item.sourceId,
-      text: "New point",
+      text: "",
       sortOrder: (maxOrder ?? -1) + 1,
     });
   }

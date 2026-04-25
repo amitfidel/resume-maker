@@ -4,6 +4,8 @@ import { useCallback } from "react";
 import { EditableText } from "./editable-text";
 import { EditableDateRange } from "./editable-date-range";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useT } from "@/lib/i18n/context";
+import { DEFAULT_HEADINGS } from "@/lib/resume/types";
 import {
   updateSummary as _updateSummary,
   updateBlockHeading as _updateBlockHeading,
@@ -58,14 +60,42 @@ type Props = {
   resume: ResolvedResume;
 };
 
-const BLOCK_ADD_LABELS: Record<string, string> = {
-  experience: "Add Experience",
-  education: "Add Education",
-  skills: "Add Skill",
-  projects: "Add Project",
-  certifications: "Add Certification",
-  custom: "Add Item",
-};
+/**
+ * If the user hasn't overridden a block's heading, fall back to a localized
+ * default. We compare against the English DEFAULT_HEADINGS so legacy resumes
+ * (created before i18n) still translate.
+ */
+function localizedHeading(
+  heading: string,
+  type: keyof typeof DEFAULT_HEADINGS,
+  t: (k: string) => string,
+): string {
+  if (heading === DEFAULT_HEADINGS[type] || heading === "") {
+    return t(`canvas.heading.${type}`);
+  }
+  return heading;
+}
+
+/**
+ * Match legacy seed values written by older versions of addItemToBlock
+ * ("Degree", "University", "Job Title", "Company", "Project Name",
+ * "New Skill", "Other", "Certification Name") and treat them as empty so
+ * the user sees a localized placeholder instead of stale English text.
+ */
+const LEGACY_SEEDS = new Set([
+  "Degree",
+  "University",
+  "Job Title",
+  "Company",
+  "Project Name",
+  "New Skill",
+  "Other",
+  "Certification Name",
+]);
+function notLegacy(v: string | null | undefined): string {
+  if (!v) return "";
+  return LEGACY_SEEDS.has(v) ? "" : v;
+}
 
 export function InteractiveResume({ resume }: Props) {
   const style = getStyle(resume.templateId);
@@ -434,6 +464,7 @@ function InteractiveBlock({
   style: TemplateStyle;
 }) {
   const confirm = useConfirm();
+  const t = useT();
   const handleHeadingChange = useCallback(
     (text: string) => {
       const override = text === block.defaultHeading ? null : text;
@@ -476,10 +507,10 @@ function InteractiveBlock({
         }}
       >
         <EditableText
-          value={block.heading}
+          value={localizedHeading(block.heading, block.type, t)}
           originalValue={block.defaultHeading || undefined}
           onSave={handleHeadingChange}
-          placeholder="Section Name"
+          placeholder={t("canvas.section_name")}
           style={{
             fontFamily: style.headingFont,
             fontSize: sh.size,
@@ -525,7 +556,7 @@ function InteractiveBlock({
         style={{ color: style.accentColor }}
       >
         <Plus className="h-3 w-3" />
-        {BLOCK_ADD_LABELS[block.type] ?? "Add Item"}
+        {t(`canvas.add.${block.type}`) || t("canvas.add.custom")}
       </button>
     </section>
   );
@@ -553,13 +584,14 @@ function SidebarBlock({
     addItemToBlock(resumeId, block.id);
   }, [resumeId, block.id]);
 
+  const t = useT();
   const visibleItems = block.items.filter((i) => i.isVisible);
 
   return (
     <div>
       <SidebarHeading style={style}>
         <EditableText
-          value={block.heading}
+          value={localizedHeading(block.heading, block.type, t)}
           originalValue={block.defaultHeading || undefined}
           onSave={handleHeadingChange}
           style={{ color: style.sidebarTextColor }}
@@ -579,7 +611,7 @@ function SidebarBlock({
         style={{ color: style.sidebarTextColor }}
       >
         <Plus className="h-2.5 w-2.5" />
-        Add
+        {t("common.add")}
       </button>
     </div>
   );
@@ -679,32 +711,32 @@ function ExperienceCard({
     addBulletToItem(resumeId, item.id);
   }, [resumeId, item.id]);
 
+  const t = useT();
+
   return (
     <ItemWrapper resumeId={resumeId} itemId={item.id}>
       <div className="flex items-baseline justify-between gap-2">
         <div className="flex-1 min-w-0">
           <EditableText
-            value={exp.title}
+            value={notLegacy(exp.title)}
             onSave={setField("title")}
+            placeholder={t("canvas.ph.title")}
             style={{ fontWeight: 600, color: style.primaryColor }}
           />
           <span style={{ color: style.mutedColor }}> · </span>
           <EditableText
-            value={exp.company}
+            value={notLegacy(exp.company)}
             onSave={setField("company")}
+            placeholder={t("canvas.ph.company")}
             style={{ color: style.textColor }}
           />
-          {(exp.location || true) && (
-            <>
-              <span style={{ color: style.mutedColor }}> · </span>
-              <EditableText
-                value={exp.location || ""}
-                onSave={setField("location")}
-                placeholder="Location"
-                style={{ color: style.mutedColor, fontSize: "0.85em" }}
-              />
-            </>
-          )}
+          <span style={{ color: style.mutedColor }}> · </span>
+          <EditableText
+            value={exp.location || ""}
+            onSave={setField("location")}
+            placeholder={t("canvas.ph.location")}
+            style={{ color: style.mutedColor, fontSize: "0.85em" }}
+          />
         </div>
         <EditableDateRange
           startDate={exp.startDate}
@@ -718,7 +750,7 @@ function ExperienceCard({
       <ul
         style={{
           marginTop: "0.25rem",
-          marginLeft: "1.25rem",
+          marginInlineStart: "1.25rem",
           listStyle: bulletListStyle(style.bulletStyle),
           fontSize: "0.9em",
           color: style.textColor,
@@ -736,11 +768,11 @@ function ExperienceCard({
       </ul>
       <button
         onClick={handleAddBullet}
-        className="mt-1 ml-5 flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 transition-all"
+        className="mt-1 ms-5 flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 transition-all"
         style={{ color: style.accentColor }}
       >
         <Plus className="h-3 w-3" />
-        Add bullet
+        {t("canvas.add.bullet")}
       </button>
     </ItemWrapper>
   );
@@ -778,10 +810,24 @@ function EditableBullet({
     },
     [resumeId, itemId, bulletId]
   );
+  const t = useT();
+
+  // Treat the legacy English seed text as empty so it shows a localized
+  // placeholder until the user types real content.
+  const LEGACY_BULLET_SEEDS = new Set([
+    "New accomplishment or responsibility",
+    "New point",
+  ]);
+  const display = LEGACY_BULLET_SEEDS.has(text) ? "" : text;
 
   return (
     <li>
-      <EditableText value={text} onSave={handleSave} aiEnabled />
+      <EditableText
+        value={display}
+        onSave={handleSave}
+        placeholder={t("canvas.ph.bullet")}
+        aiEnabled
+      />
     </li>
   );
 }
@@ -819,6 +865,7 @@ function EducationCard({
 }) {
   const edu = item.data as ResolvedEducation;
   const setField = useFieldUpdater(resumeId, item.id);
+  const t = useT();
 
   const handleDatesChange = useCallback(
     (startDate: string | null, endDate: string | null) => {
@@ -835,28 +882,30 @@ function EducationCard({
     >
       <div className="flex-1 min-w-0">
         <EditableText
-          value={edu.degree}
+          value={notLegacy(edu.degree)}
           onSave={setField("degree")}
+          placeholder={t("canvas.ph.degree")}
           style={{ fontWeight: 600, color: style.primaryColor }}
         />
-        <span style={{ color: style.primaryColor }}> in </span>
+        <span style={{ color: style.primaryColor }}> · </span>
         <EditableText
           value={edu.fieldOfStudy || ""}
           onSave={setField("fieldOfStudy")}
-          placeholder="Field of Study"
+          placeholder={t("canvas.ph.field_of_study")}
           style={{ fontWeight: 600, color: style.primaryColor }}
         />
         <span style={{ color: style.mutedColor }}> · </span>
         <EditableText
-          value={edu.institution}
+          value={notLegacy(edu.institution)}
           onSave={setField("institution")}
+          placeholder={t("canvas.ph.institution")}
           style={{ color: style.textColor }}
         />
         <span style={{ color: style.mutedColor }}> · GPA: </span>
         <EditableText
           value={edu.gpa || ""}
           onSave={setField("gpa")}
-          placeholder="—"
+          placeholder={t("canvas.ph.gpa")}
           style={{ color: style.mutedColor }}
         />
       </div>
@@ -1017,6 +1066,7 @@ function ProjectCard({
   const proj = item.data as ResolvedProject;
   const visibleBullets = proj.bullets.filter((b) => b.visible);
   const setField = useFieldUpdater(resumeId, item.id);
+  const t = useT();
 
   const handleAddBullet = useCallback(() => {
     addBulletToItem(resumeId, item.id);
@@ -1026,8 +1076,9 @@ function ProjectCard({
     <ItemWrapper resumeId={resumeId} itemId={item.id}>
       <div>
         <EditableText
-          value={proj.name}
+          value={notLegacy(proj.name)}
           onSave={setField("name")}
+          placeholder={t("canvas.ph.project_name")}
           style={{ fontWeight: 600, color: style.primaryColor }}
         />
         {proj.technologies && proj.technologies.length > 0 && (
@@ -1040,7 +1091,7 @@ function ProjectCard({
         as="p"
         value={proj.description || ""}
         onSave={setField("description")}
-        placeholder="Add description..."
+        placeholder={t("canvas.ph.add_description")}
         style={{ fontSize: "0.9em", color: style.textColor }}
       />
       <ul
@@ -1064,11 +1115,11 @@ function ProjectCard({
       </ul>
       <button
         onClick={handleAddBullet}
-        className="mt-1 ml-5 flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 transition-all"
+        className="mt-1 ms-5 flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100 transition-all"
         style={{ color: style.accentColor }}
       >
         <Plus className="h-3 w-3" />
-        Add bullet
+        {t("canvas.add.bullet")}
       </button>
     </ItemWrapper>
   );
@@ -1106,19 +1157,33 @@ function SidebarCerts({
   style: TemplateStyle;
 }) {
   return (
+    <CertSidebarList items={items} resumeId={resumeId} style={style} />
+  );
+}
+
+function CertSidebarList({
+  items,
+  resumeId,
+  style,
+}: {
+  items: ResolvedBlockItem[];
+  resumeId: string;
+  style: TemplateStyle;
+}) {
+  const t = useT();
+  return (
     <div className="space-y-2">
       {items.map((item) => {
         const cert = item.data as ResolvedCertification;
         return (
           <div key={item.id} className="text-[0.75rem]" style={{ color: style.sidebarTextColor }}>
             <EditableText
-              value={cert.name}
+              value={notLegacy(cert.name)}
               onSave={(v) => updateItemField(resumeId, item.id, "name", v)}
+              placeholder={t("canvas.ph.cert_name")}
               style={{ fontWeight: 600, color: style.sidebarTextColor }}
             />
-            {cert.issuer && (
-              <div className="opacity-75">{cert.issuer}</div>
-            )}
+            {cert.issuer && <div className="opacity-75">{cert.issuer}</div>}
           </div>
         );
       })}
@@ -1137,6 +1202,7 @@ function CertCard({
 }) {
   const cert = item.data as ResolvedCertification;
   const setField = useFieldUpdater(resumeId, item.id);
+  const t = useT();
 
   return (
     <ItemWrapper
@@ -1147,15 +1213,16 @@ function CertCard({
     >
       <div className="flex-1 min-w-0">
         <EditableText
-          value={cert.name}
+          value={notLegacy(cert.name)}
           onSave={setField("name")}
+          placeholder={t("canvas.ph.cert_name")}
           style={{ fontWeight: 600, color: style.primaryColor }}
         />
         <span style={{ color: style.mutedColor }}> · </span>
         <EditableText
           value={cert.issuer || ""}
           onSave={setField("issuer")}
-          placeholder="Issuer"
+          placeholder={t("canvas.ph.issuer")}
           style={{ color: style.textColor }}
         />
       </div>
@@ -1204,20 +1271,21 @@ function CustomItemCard({
 }) {
   const data = item.data as ResolvedCustomItem;
   const setField = useFieldUpdater(resumeId, item.id);
+  const t = useT();
 
   return (
     <ItemWrapper resumeId={resumeId} itemId={item.id}>
       <EditableText
         value={data.title}
         onSave={setField("title")}
-        placeholder="Title"
+        placeholder={t("canvas.ph.title")}
         style={{ fontWeight: 600, color: style.primaryColor }}
       />
       <EditableText
         as="p"
         value={data.text}
         onSave={setField("text")}
-        placeholder="Description or details..."
+        placeholder={t("canvas.ph.description")}
         multiline
         style={{ fontSize: "0.9em", color: style.textColor }}
       />

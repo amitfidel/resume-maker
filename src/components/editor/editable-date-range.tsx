@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { formatDateRange } from "@/templates/modern-clean/shared";
+import { useT } from "@/lib/i18n/context";
 
 type Props = {
   startDate: string | null;
@@ -26,8 +27,9 @@ export function EditableDateRange({
 }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef<HTMLSpanElement>(null);
+  const t = useT();
 
-  const display = formatDateRange(startDate, endDate, isCurrent) || "Add dates";
+  const display = formatDateRange(startDate, endDate, isCurrent) || t("canvas.add_dates");
 
   return (
     <>
