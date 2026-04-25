@@ -14,6 +14,7 @@ import {
 import { Plus, Trash2, Award } from "lucide-react";
 import { createCertification, deleteCertification } from "./actions";
 import type { Certification } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
 export function CertificationsSection({
   certifications,
@@ -21,6 +22,7 @@ export function CertificationsSection({
   certifications: Certification[];
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   async function handleCreate(formData: FormData) {
     await createCertification(formData);
@@ -32,10 +34,10 @@ export function CertificationsSection({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
-            <em className="serif-ital">Certifications</em>
+            {t("profile.cert.title")}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-            Credentials, licenses, and certifications you hold.
+            {t("profile.cert.lead")}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -45,49 +47,49 @@ export function CertificationsSection({
             }
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Add certification
+            {t("profile.cert.add")}
           </DialogTrigger>
           <DialogContent className="max-w-md rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
               <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
-                Add <em className="serif-ital">certification</em>
+                {t("profile.cert.add")}
               </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name" className="text-xs text-[var(--on-surface-muted)]">
-                  Certification name
+                  {t("profile.cert.name")}
                 </Label>
                 <Input id="name" name="name" required className="resumi-input" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="issuer" className="text-xs text-[var(--on-surface-muted)]">
-                  Issuer
+                  {t("profile.cert.issuer")}
                 </Label>
-                <Input id="issuer" name="issuer" placeholder="AWS, Google, etc." className="resumi-input" />
+                <Input id="issuer" name="issuer" placeholder={t("profile.cert.issuer_ph")} className="resumi-input" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="issueDate" className="text-xs text-[var(--on-surface-muted)]">
-                    Issue date
+                    {t("profile.cert.issued")}
                   </Label>
                   <Input id="issueDate" name="issueDate" type="month" className="resumi-input" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="expiryDate" className="text-xs text-[var(--on-surface-muted)]">
-                    Expiry date
+                    {t("profile.cert.expires")}
                   </Label>
                   <Input id="expiryDate" name="expiryDate" type="month" className="resumi-input" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="credentialUrl" className="text-xs text-[var(--on-surface-muted)]">
-                  Credential URL
+                  {t("profile.cert.url")}
                 </Label>
                 <Input id="credentialUrl" name="credentialUrl" placeholder="https://…" className="resumi-input" />
               </div>
               <Button type="submit" className="magical-gradient magic-shine h-11 w-full rounded-full">
-                Add certification
+                {t("profile.cert.add")}
               </Button>
             </form>
           </DialogContent>
@@ -99,7 +101,7 @@ export function CertificationsSection({
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
             <Award className="h-5 w-5 text-[var(--on-surface-muted)]" />
           </div>
-          <p className="text-[var(--on-surface-muted)]">No certifications added yet.</p>
+          <p className="text-[var(--on-surface-muted)]">{t("profile.cert.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">

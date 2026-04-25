@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { useT } from "@/lib/i18n/context";
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [isPending, startTransition] = useTransition();
   const confirm = useConfirm();
+  const t = useT();
 
   const loadVersions = useCallback(async () => {
     const v = await getResumeVersions(resumeId);
@@ -73,10 +75,9 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   const handleRestore = useCallback(
     async (versionId: string, versionNumber: number) => {
       const ok = await confirm({
-        title: `Restore version ${versionNumber}?`,
-        description:
-          "Your current state is auto-saved as a new version first. You can always undo.",
-        confirmLabel: "Restore",
+        title: `${t("history.confirm.restore.title")} ${versionNumber}?`,
+        description: t("history.confirm.restore.desc"),
+        confirmLabel: t("history.confirm.restore.cta"),
       });
       if (!ok) return;
 
@@ -96,9 +97,9 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   const handleDelete = useCallback(
     async (versionId: string, versionNumber: number) => {
       const ok = await confirm({
-        title: `Delete version ${versionNumber}?`,
-        description: "This version is gone for good.",
-        confirmLabel: "Delete",
+        title: `${t("history.confirm.delete.title")} ${versionNumber}?`,
+        description: t("history.confirm.delete.desc"),
+        confirmLabel: t("history.confirm.delete.cta"),
         destructive: true,
       });
       if (!ok) return;
@@ -127,15 +128,11 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
             <History className="h-6 w-6 text-[var(--on-surface-muted)]" />
           </div>
           <h2 className="font-headline text-[24px] font-normal tracking-[-0.015em] text-[var(--on-surface)]">
-            No versions <em className="serif-ital">yet</em>
+            {t("history.empty.title.part1")}{" "}
+            <em className="serif-ital">{t("history.empty.title.italic")}</em>
           </h2>
           <p className="mt-2 text-sm text-[var(--on-surface-variant)]">
-            Click{" "}
-            <span className="inline-flex items-center gap-1 font-medium text-[var(--on-surface)]">
-              Save Version
-            </span>{" "}
-            in the toolbar to capture a snapshot of your resume. You can then
-            return to any version at any time.
+            {t("history.empty.lead")}
           </p>
         </div>
       </div>
@@ -180,7 +177,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
             </DialogTitle>
             <div className="flex items-center gap-3 text-xs text-[var(--on-surface-variant)]">
               <span>
-                {previewVersion?.createdBy === "ai_tailoring" ? "AI" : "You"}
+                {previewVersion?.createdBy === "ai_tailoring" ? t("history.by_ai") : t("history.by_you")}
               </span>
               <span>•</span>
               <span>
@@ -209,7 +206,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
             )}
             {!loadingPreview && !resolvedPreview && (
               <p className="text-center text-sm text-[var(--on-surface-variant)] py-12">
-                Could not load version preview.
+                {t("history.preview.failed")}
               </p>
             )}
           </div>
@@ -225,7 +222,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
                 disabled={isPending}
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Restore This Version
+                {t("history.restore")}
               </Button>
               <Button
                 variant="outline"
@@ -255,6 +252,7 @@ function VersionCard({
   isPending: boolean;
 }) {
   const isAi = version.createdBy === "ai_tailoring";
+  const t = useT();
 
   return (
     <div className="resumi-card p-4 transition-all hover:shadow-[var(--sh-3)]">
@@ -269,7 +267,7 @@ function VersionCard({
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
               <p className="font-medium text-[var(--on-surface)]">
-                {version.changeSummary || "Untitled version"}
+                {version.changeSummary || t("history.untitled")}
               </p>
               <div className="mt-1 flex items-center gap-3 text-xs text-[var(--on-surface-variant)]">
                 <span className="inline-flex items-center gap-1">
@@ -278,7 +276,7 @@ function VersionCard({
                   ) : (
                     <User className="h-3 w-3" />
                   )}
-                  {isAi ? "AI" : "You"}
+                  {isAi ? t("history.by_ai") : t("history.by_you")}
                 </span>
                 <span>•</span>
                 <span>{formatRelative(version.createdAt)}</span>
@@ -303,7 +301,7 @@ function VersionCard({
               disabled={isPending}
             >
               <Eye className="h-3 w-3" />
-              Preview
+              {t("history.preview")}
             </Button>
             <Button
               variant="ghost"
@@ -313,7 +311,7 @@ function VersionCard({
               disabled={isPending}
             >
               <RotateCcw className="h-3 w-3" />
-              Restore
+              {t("history.restore")}
             </Button>
             <Button
               variant="ghost"
@@ -323,7 +321,7 @@ function VersionCard({
               disabled={isPending}
             >
               <Trash2 className="h-3 w-3" />
-              Delete
+              {t("history.delete")}
             </Button>
           </div>
         </div>

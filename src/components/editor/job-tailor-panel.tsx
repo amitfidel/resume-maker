@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useT } from "@/lib/i18n/context";
 import { Badge } from "@/components/ui/badge";
 import { Target, Loader2, X, Check, ArrowRight } from "lucide-react";
 
@@ -31,6 +32,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
   const [jd, setJd] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const t = useT();
 
   const handleAnalyze = useCallback(async () => {
     if (!jd.trim()) return;
@@ -66,7 +68,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
             <Target className="h-3.5 w-3.5 text-white" />
           </div>
           <h3 className="font-headline text-[16px] tracking-[-0.01em] text-[var(--on-surface)]">
-            Job tailor
+            {t("tailor.title")}
           </h3>
         </div>
         <Button
@@ -84,10 +86,10 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
           <>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                Paste a job description to get tailoring suggestions.
+                {t("tailor.lead")}
               </p>
               <Textarea
-                placeholder="Paste the job description here..."
+                placeholder={t("tailor.placeholder")}
                 rows={8}
                 value={jd}
                 onChange={(e) => setJd(e.target.value)}
@@ -102,12 +104,12 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  Analyzing…
+                  {t("tailor.analyzing")}
                 </>
               ) : (
                 <>
                   <Target className="mr-2 h-3.5 w-3.5" />
-                  Analyze match
+                  {t("tailor.analyze")}
                 </>
               )}
             </Button>
@@ -129,7 +131,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
                 <span className="text-[22px]">%</span>
               </div>
               <p className="mt-2 text-[11px] uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
-                Match score
+                {t("tailor.match_score")}
               </p>
             </div>
 
@@ -141,7 +143,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
             {/* Keywords */}
             <div className="space-y-2">
               <p className="text-xs font-medium text-muted-foreground">
-                Matched Keywords
+                {t("tailor.matched")}
               </p>
               <div className="flex flex-wrap gap-1">
                 {analysis.keywordMatches.map((kw) => (
@@ -156,7 +158,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
             {analysis.missingKeywords.length > 0 && (
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">
-                  Missing Keywords
+                  {t("tailor.missing")}
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {analysis.missingKeywords.map((kw) => (
@@ -175,7 +177,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
             {/* Suggestions */}
             <div className="space-y-3">
               <p className="text-xs font-medium text-muted-foreground">
-                Suggestions ({analysis.suggestions.length})
+                {t("tailor.suggestions")} ({analysis.suggestions.length})
               </p>
               {analysis.suggestions.map((sug, i) => (
                 <div
@@ -212,7 +214,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
               className="w-full"
               onClick={() => setAnalysis(null)}
             >
-              Try Another Job
+              {t("tailor.try_another")}
             </Button>
           </>
         )}

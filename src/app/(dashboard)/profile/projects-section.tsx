@@ -15,11 +15,13 @@ import {
 import { Plus, Trash2, FolderGit2 } from "lucide-react";
 import { createProject, deleteProject } from "./actions";
 import type { Project, ProjectBullet } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
 type ProjectWithBullets = Project & { bullets: ProjectBullet[] };
 
 export function ProjectsSection({ projects }: { projects: ProjectWithBullets[] }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   async function handleCreate(formData: FormData) {
     await createProject(formData);
@@ -31,10 +33,10 @@ export function ProjectsSection({ projects }: { projects: ProjectWithBullets[] }
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
-            <em className="serif-ital">Projects</em>
+            {t("profile.proj.title")}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-            Side builds, open source, portfolio pieces.
+            {t("profile.proj.lead")}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -44,54 +46,54 @@ export function ProjectsSection({ projects }: { projects: ProjectWithBullets[] }
             }
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Add project
+            {t("profile.proj.add")}
           </DialogTrigger>
           <DialogContent className="max-w-lg rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
               <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
-                Add <em className="serif-ital">project</em>
+                {t("profile.proj.add")}
               </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="name" className="text-xs text-[var(--on-surface-muted)]">
-                    Project name
+                    {t("profile.proj.name")}
                   </Label>
                   <Input id="name" name="name" required className="resumi-input" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="url" className="text-xs text-[var(--on-surface-muted)]">
-                    URL
+                    {t("profile.proj.url")}
                   </Label>
                   <Input id="url" name="url" placeholder="https://…" className="resumi-input" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="description" className="text-xs text-[var(--on-surface-muted)]">
-                  Description
+                  {t("profile.proj.description")}
                 </Label>
                 <Textarea id="description" name="description" rows={2} className="resumi-input" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="technologies" className="text-xs text-[var(--on-surface-muted)]">
-                  Technologies (comma-separated)
+                  {t("profile.proj.tech")}
                 </Label>
                 <Input
                   id="technologies"
                   name="technologies"
-                  placeholder="React, TypeScript, PostgreSQL"
+                  placeholder={t("profile.proj.tech_ph")}
                   className="resumi-input"
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="bullets" className="text-xs text-[var(--on-surface-muted)]">
-                  Key points (one per line)
+                  {t("profile.proj.bullets")}
                 </Label>
                 <Textarea id="bullets" name="bullets" rows={4} className="resumi-input" />
               </div>
               <Button type="submit" className="magical-gradient magic-shine h-11 w-full rounded-full">
-                Add project
+                {t("profile.proj.add")}
               </Button>
             </form>
           </DialogContent>
@@ -103,7 +105,7 @@ export function ProjectsSection({ projects }: { projects: ProjectWithBullets[] }
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
             <FolderGit2 className="h-5 w-5 text-[var(--on-surface-muted)]" />
           </div>
-          <p className="text-[var(--on-surface-muted)]">No projects added yet.</p>
+          <p className="text-[var(--on-surface-muted)]">{t("profile.proj.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">

@@ -15,9 +15,11 @@ import {
 import { Plus, Trash2, GraduationCap } from "lucide-react";
 import { createEducation, deleteEducation } from "./actions";
 import type { Education } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
 export function EducationSection({ education }: { education: Education[] }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   async function handleCreate(formData: FormData) {
     await createEducation(formData);
@@ -29,10 +31,10 @@ export function EducationSection({ education }: { education: Education[] }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
-            <em className="serif-ital">Education</em>
+            {t("profile.edu.title")}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-            Schools, degrees, and coursework.
+            {t("profile.edu.lead")}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -45,64 +47,64 @@ export function EducationSection({ education }: { education: Education[] }) {
             }
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Add education
+            {t("profile.edu.add")}
           </DialogTrigger>
           <DialogContent className="max-w-lg rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
               <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
-                Add <em className="serif-ital">education</em>
+                {t("profile.edu.add")}
               </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="institution" className="text-xs text-[var(--on-surface-muted)]">
-                  Institution
+                  {t("profile.edu.institution")}
                 </Label>
                 <Input id="institution" name="institution" required className="resumi-input" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="degree" className="text-xs text-[var(--on-surface-muted)]">
-                    Degree
+                    {t("profile.edu.degree")}
                   </Label>
-                  <Input id="degree" name="degree" placeholder="B.S." required className="resumi-input" />
+                  <Input id="degree" name="degree" placeholder={t("profile.edu.degree_ph")} required className="resumi-input" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="fieldOfStudy" className="text-xs text-[var(--on-surface-muted)]">
-                    Field of study
+                    {t("profile.edu.field")}
                   </Label>
-                  <Input id="fieldOfStudy" name="fieldOfStudy" placeholder="Computer Science" className="resumi-input" />
+                  <Input id="fieldOfStudy" name="fieldOfStudy" placeholder={t("profile.edu.field_ph")} className="resumi-input" />
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="startDate" className="text-xs text-[var(--on-surface-muted)]">
-                    Start date
+                    {t("profile.edu.start")}
                   </Label>
                   <Input id="startDate" name="startDate" type="month" className="resumi-input" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="endDate" className="text-xs text-[var(--on-surface-muted)]">
-                    End date
+                    {t("profile.edu.end")}
                   </Label>
                   <Input id="endDate" name="endDate" type="month" className="resumi-input" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="gpa" className="text-xs text-[var(--on-surface-muted)]">
-                  GPA (optional)
+                  {t("profile.edu.gpa")}
                 </Label>
-                <Input id="gpa" name="gpa" placeholder="3.8/4.0" className="resumi-input" />
+                <Input id="gpa" name="gpa" placeholder={t("profile.edu.gpa_ph")} className="resumi-input" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="description" className="text-xs text-[var(--on-surface-muted)]">
-                  Notes (optional)
+                  {t("profile.edu.notes")}
                 </Label>
                 <Textarea
                   id="description"
                   name="description"
                   rows={3}
-                  placeholder="Relevant coursework, honors, activities…"
+                  placeholder={t("profile.edu.notes_ph")}
                   className="resumi-input"
                 />
               </div>
@@ -110,7 +112,7 @@ export function EducationSection({ education }: { education: Education[] }) {
                 type="submit"
                 className="magical-gradient magic-shine h-11 w-full rounded-full"
               >
-                Add education
+                {t("profile.edu.add")}
               </Button>
             </form>
           </DialogContent>
@@ -122,7 +124,7 @@ export function EducationSection({ education }: { education: Education[] }) {
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
             <GraduationCap className="h-5 w-5 text-[var(--on-surface-muted)]" />
           </div>
-          <p className="text-[var(--on-surface-muted)]">No education added yet.</p>
+          <p className="text-[var(--on-surface-muted)]">{t("profile.edu.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">

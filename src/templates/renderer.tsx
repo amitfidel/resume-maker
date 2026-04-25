@@ -18,8 +18,8 @@ import type {
 import type { TemplateStyle } from "./styles";
 import { getStyle } from "./styles";
 import { formatDateRange } from "./modern-clean/shared";
-import { useT } from "@/lib/i18n/context";
-import { localizedHeading, notLegacy } from "@/lib/i18n/dictionary";
+import { useT, useI18n } from "@/lib/i18n/context";
+import { localizedHeading, notLegacy, isItemEmpty } from "@/lib/i18n/dictionary";
 
 export function TemplateRenderer({ resume }: { resume: ResolvedResume }) {
   const style = getStyle(resume.templateId);
@@ -243,6 +243,10 @@ function RenderSectionHeading({
   style: TemplateStyle;
 }) {
   const sh = style.sectionHeading;
+  const { locale } = useI18n();
+  // Hebrew has no case — applying `uppercase` is a no-op visually but it
+  // also kills the proper letterforms in some fonts. Skip it for he.
+  const upper = sh.case === "upper" && locale !== "he";
   return (
     <h2
       style={{
@@ -250,8 +254,8 @@ function RenderSectionHeading({
         fontSize: sh.size,
         fontWeight: sh.weight,
         color: sh.color,
-        letterSpacing: sh.tracking,
-        textTransform: sh.case === "upper" ? "uppercase" : "none",
+        letterSpacing: locale === "he" ? "normal" : sh.tracking,
+        textTransform: upper ? "uppercase" : "none",
         marginBottom: sh.marginBottom,
         borderBottom:
           sh.border === "bottom"
@@ -274,14 +278,15 @@ function RenderSidebarHeading({
   children: React.ReactNode;
   style: TemplateStyle;
 }) {
+  const { locale } = useI18n();
   return (
     <h2
       style={{
         fontFamily: style.headingFont,
         fontSize: "0.65rem",
         fontWeight: 700,
-        letterSpacing: "0.15em",
-        textTransform: "uppercase",
+        letterSpacing: locale === "he" ? "normal" : "0.15em",
+        textTransform: locale === "he" ? "none" : "uppercase",
         color: style.sidebarTextColor,
         borderBottom: `1px solid rgba(255,255,255,0.2)`,
         paddingBottom: "0.25rem",
@@ -319,9 +324,12 @@ function RenderExperience({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
+  // Skip items where every meaningful field is empty/legacy seed.
+  // Avoids the "·" leak in PDFs from legacy addItemToBlock seeds.
+  const visible = items.filter((i) => !isItemEmpty("experience", i.data));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: style.itemSpacing }}>
-      {items.map((item) => {
+      {visible.map((item) => {
         const exp = item.data as ResolvedExperience;
         const bullets = exp.bullets.filter((b) => b.visible);
         return (
@@ -368,9 +376,10 @@ function RenderEducation({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
+  const visible = items.filter((i) => !isItemEmpty("education", i.data));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-      {items.map((item) => {
+      {visible.map((item) => {
         const edu = item.data as ResolvedEducation;
         return (
           <div
@@ -402,7 +411,8 @@ function RenderSkills({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
-  const skills = items.map((i) => i.data as ResolvedSkill);
+  const visible = items.filter((i) => !isItemEmpty("skill", i.data));
+  const skills = visible.map((i) => i.data as ResolvedSkill);
   const grouped = skills.reduce<Record<string, ResolvedSkill[]>>((acc, s) => {
     const cat = s.category || "Other";
     if (!acc[cat]) acc[cat] = [];
@@ -429,13 +439,15 @@ function RenderSidebarSkills({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
-  const skills = items.map((i) => i.data as ResolvedSkill);
+  const visible = items.filter((i) => !isItemEmpty("skill", i.data));
+  const skills = visible.map((i) => i.data as ResolvedSkill);
   const grouped = skills.reduce<Record<string, ResolvedSkill[]>>((acc, s) => {
     const cat = s.category || "Other";
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(s);
     return acc;
   }, {});
+  const { locale } = useI18n();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -444,8 +456,8 @@ function RenderSidebarSkills({
           <p
             style={{
               fontSize: "0.6rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
+              textTransform: locale === "he" ? "none" : "uppercase",
+              letterSpacing: locale === "he" ? "normal" : "0.1em",
               opacity: 0.7,
               marginBottom: "0.25rem",
             }}
@@ -480,9 +492,10 @@ function RenderProjects({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
+  const visible = items.filter((i) => !isItemEmpty("project", i.data));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: style.itemSpacing }}>
-      {items.map((item) => {
+      {visible.map((item) => {
         const proj = item.data as ResolvedProject;
         const bullets = proj.bullets.filter((b) => b.visible);
         return (
@@ -524,9 +537,10 @@ function RenderCerts({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
+  const visible = items.filter((i) => !isItemEmpty("certification", i.data));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-      {items.map((item) => {
+      {visible.map((item) => {
         const cert = item.data as ResolvedCertification;
         return (
           <div
@@ -564,9 +578,10 @@ function RenderSidebarCerts({
   items: ResolvedBlockItem[];
   style: TemplateStyle;
 }) {
+  const visible = items.filter((i) => !isItemEmpty("certification", i.data));
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-      {items.map((item) => {
+      {visible.map((item) => {
         const cert = item.data as ResolvedCertification;
         return (
           <div key={item.id} style={{ fontSize: "0.75rem" }}>

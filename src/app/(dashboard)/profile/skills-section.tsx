@@ -14,9 +14,11 @@ import {
 import { Plus, X, Wrench } from "lucide-react";
 import { createSkill, deleteSkill } from "./actions";
 import type { Skill } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
 export function SkillsSection({ skills }: { skills: Skill[] }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   async function handleCreate(formData: FormData) {
     await createSkill(formData);
@@ -35,10 +37,10 @@ export function SkillsSection({ skills }: { skills: Skill[] }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
-            <em className="serif-ital">Skills</em>
+            {t("profile.skills.title")}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-            Tools, languages, and methods you use.
+            {t("profile.skills.lead")}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -51,29 +53,29 @@ export function SkillsSection({ skills }: { skills: Skill[] }) {
             }
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Add skill
+            {t("profile.skills.add")}
           </DialogTrigger>
           <DialogContent className="max-w-md rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
               <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
-                Add <em className="serif-ital">skill</em>
+                {t("profile.skills.add")}
               </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-xs text-[var(--on-surface-muted)]">Skill name</Label>
-                <Input id="name" name="name" placeholder="React" required className="resumi-input" />
+                <Label htmlFor="name" className="text-xs text-[var(--on-surface-muted)]">{t("profile.skills.name")}</Label>
+                <Input id="name" name="name" placeholder={t("profile.skills.name_ph")} required className="resumi-input" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="category" className="text-xs text-[var(--on-surface-muted)]">Category</Label>
-                <Input id="category" name="category" placeholder="Frontend, Backend, Design…" className="resumi-input" />
+                <Label htmlFor="category" className="text-xs text-[var(--on-surface-muted)]">{t("profile.skills.category")}</Label>
+                <Input id="category" name="category" placeholder={t("profile.skills.category_ph")} className="resumi-input" />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="proficiency" className="text-xs text-[var(--on-surface-muted)]">Proficiency</Label>
-                <Input id="proficiency" name="proficiency" placeholder="Expert · Proficient · Familiar" className="resumi-input" />
+                <Label htmlFor="proficiency" className="text-xs text-[var(--on-surface-muted)]">{t("profile.skills.proficiency")}</Label>
+                <Input id="proficiency" name="proficiency" placeholder={t("profile.skills.proficiency_ph")} className="resumi-input" />
               </div>
               <Button type="submit" className="magical-gradient magic-shine h-11 w-full rounded-full">
-                Add skill
+                {t("profile.skills.add")}
               </Button>
             </form>
           </DialogContent>
@@ -85,7 +87,7 @@ export function SkillsSection({ skills }: { skills: Skill[] }) {
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
             <Wrench className="h-5 w-5 text-[var(--on-surface-muted)]" />
           </div>
-          <p className="text-[var(--on-surface-muted)]">No skills added yet.</p>
+          <p className="text-[var(--on-surface-muted)]">{t("profile.skills.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">

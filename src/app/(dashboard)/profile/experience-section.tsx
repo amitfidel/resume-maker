@@ -15,6 +15,7 @@ import {
 import { Plus, Trash2, Building2 } from "lucide-react";
 import { createWorkExperience, deleteWorkExperience } from "./actions";
 import type { WorkExperience, ExperienceBullet } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
 type ExperienceWithBullets = WorkExperience & {
   bullets: ExperienceBullet[];
@@ -26,6 +27,7 @@ export function ExperienceSection({
   experiences: ExperienceWithBullets[];
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
 
   async function handleCreate(formData: FormData) {
     await createWorkExperience(formData);
@@ -37,10 +39,10 @@ export function ExperienceSection({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
-            Work <em className="serif-ital">experience</em>
+            {t("profile.exp.title")}
           </h2>
           <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-            Roles you&apos;ve held. Add bullets for each — the AI can sharpen them later.
+            {t("profile.exp.lead")}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -53,58 +55,58 @@ export function ExperienceSection({
             }
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Add experience
+            {t("profile.exp.add")}
           </DialogTrigger>
           <DialogContent className="max-w-lg rounded-[22px] border-0 bg-[var(--surface-raised)] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]">
             <DialogHeader>
               <DialogTitle className="font-headline text-[22px] font-normal tracking-[-0.01em]">
-                Add <em className="serif-ital">experience</em>
+                {t("profile.exp.dialog_title")}
               </DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="company" className="text-xs text-[var(--on-surface-muted)]">
-                    Company
+                    {t("profile.exp.company")}
                   </Label>
                   <Input id="company" name="company" required className="resumi-input" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="title" className="text-xs text-[var(--on-surface-muted)]">
-                    Job title
+                    {t("profile.exp.job_title")}
                   </Label>
                   <Input id="title" name="title" required className="resumi-input" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="location" className="text-xs text-[var(--on-surface-muted)]">
-                  Location
+                  {t("profile.exp.location")}
                 </Label>
-                <Input id="location" name="location" placeholder="City, State" className="resumi-input" />
+                <Input id="location" name="location" placeholder={t("profile.exp.location_ph")} className="resumi-input" />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="startDate" className="text-xs text-[var(--on-surface-muted)]">
-                    Start date
+                    {t("profile.exp.start")}
                   </Label>
                   <Input id="startDate" name="startDate" type="month" required className="resumi-input" />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="endDate" className="text-xs text-[var(--on-surface-muted)]">
-                    End date
+                    {t("profile.exp.end")}
                   </Label>
                   <Input id="endDate" name="endDate" type="month" className="resumi-input" />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="bullets" className="text-xs text-[var(--on-surface-muted)]">
-                  Bullet points (one per line)
+                  {t("profile.exp.bullets")}
                 </Label>
                 <Textarea
                   id="bullets"
                   name="bullets"
                   rows={5}
-                  placeholder={"Led development of…\nIncreased revenue by…\nManaged a team of…"}
+                  placeholder={t("profile.exp.bullets_ph")}
                   className="resumi-input"
                 />
               </div>
@@ -112,7 +114,7 @@ export function ExperienceSection({
                 type="submit"
                 className="magical-gradient magic-shine h-11 w-full rounded-full"
               >
-                Add experience
+                {t("profile.exp.add")}
               </Button>
             </form>
           </DialogContent>
@@ -124,7 +126,7 @@ export function ExperienceSection({
           <div className="mb-3 grid h-12 w-12 place-items-center rounded-[12px] bg-[var(--surface-sunk)]">
             <Building2 className="h-5 w-5 text-[var(--on-surface-muted)]" />
           </div>
-          <p className="text-[var(--on-surface-muted)]">No work experience added yet.</p>
+          <p className="text-[var(--on-surface-muted)]">{t("profile.exp.empty")}</p>
         </div>
       ) : (
         <div className="space-y-3">

@@ -12,21 +12,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Briefcase, Sparkles } from "lucide-react";
+import { Plus, Trash2, Briefcase } from "lucide-react";
 import {
   createApplication,
   updateApplicationStatus,
   deleteApplication,
 } from "./actions";
 import type { JobApplication } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
-const COLUMNS = [
-  { value: "saved", label: "Saved", dot: "#9aa0b1" },
-  { value: "applied", label: "Applied", dot: "#6d3cff" },
-  { value: "interviewing", label: "Interviewing", dot: "#d7a54a" },
-  { value: "offered", label: "Offered", dot: "#3ec28f" },
-  { value: "rejected", label: "Rejected", dot: "#d24545" },
-];
+const COLUMN_VALUES = ["saved", "applied", "interviewing", "offered", "rejected"] as const;
+const COLUMN_DOT: Record<string, string> = {
+  saved: "#9aa0b1",
+  applied: "#6d3cff",
+  interviewing: "#d7a54a",
+  offered: "#3ec28f",
+  rejected: "#d24545",
+};
 
 export function ApplicationBoard({
   applications,
@@ -34,6 +36,12 @@ export function ApplicationBoard({
   applications: JobApplication[];
 }) {
   const [open, setOpen] = useState(false);
+  const t = useT();
+  const COLUMNS = COLUMN_VALUES.map((v) => ({
+    value: v,
+    label: t(`apps.col.${v}`),
+    dot: COLUMN_DOT[v],
+  }));
 
   async function handleCreate(formData: FormData) {
     await createApplication(formData);
@@ -51,56 +59,52 @@ export function ApplicationBoard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Input
-            placeholder="Search applications..."
+            placeholder={t("apps.search_ph")}
             className="h-9 w-64 bg-[var(--surface-container-lowest)] border-ghost text-sm"
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button size="sm" className="magical-surface text-white gap-2 text-xs">
-            <Sparkles className="h-3.5 w-3.5" />
-            Magic Sync
-          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger render={<Button size="sm" className="magical-gradient text-white gap-2" />}>
               <Plus className="h-4 w-4" />
-              Add Application
+              {t("apps.add")}
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle className="font-headline">Track a Job Application</DialogTitle>
+                <DialogTitle className="font-headline">{t("apps.dialog_title")}</DialogTitle>
               </DialogHeader>
               <form action={handleCreate} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="company">Company</Label>
+                    <Label htmlFor="company">{t("apps.field.company")}</Label>
                     <Input id="company" name="company" required className="border-ghost bg-[var(--surface-container-lowest)]" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="position">Position</Label>
+                    <Label htmlFor="position">{t("apps.field.position")}</Label>
                     <Input id="position" name="position" required className="border-ghost bg-[var(--surface-container-lowest)]" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="jobUrl">Job URL</Label>
+                  <Label htmlFor="jobUrl">{t("apps.field.url")}</Label>
                   <Input id="jobUrl" name="jobUrl" placeholder="https://..." className="border-ghost bg-[var(--surface-container-lowest)]" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="appliedDate">Applied Date</Label>
+                    <Label htmlFor="appliedDate">{t("apps.field.applied_date")}</Label>
                     <Input id="appliedDate" name="appliedDate" type="date" className="border-ghost bg-[var(--surface-container-lowest)]" />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="salaryRange">Salary Range</Label>
-                    <Input id="salaryRange" name="salaryRange" placeholder="$120k - $150k" className="border-ghost bg-[var(--surface-container-lowest)]" />
+                    <Label htmlFor="salaryRange">{t("apps.field.salary")}</Label>
+                    <Input id="salaryRange" name="salaryRange" placeholder={t("apps.field.salary_ph")} className="border-ghost bg-[var(--surface-container-lowest)]" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">{t("apps.field.notes")}</Label>
                   <Textarea id="notes" name="notes" rows={3} className="border-ghost bg-[var(--surface-container-lowest)]" />
                 </div>
                 <input type="hidden" name="status" value="applied" />
                 <Button type="submit" className="w-full magical-gradient text-white">
-                  Add Application
+                  {t("apps.add")}
                 </Button>
               </form>
             </DialogContent>
@@ -114,10 +118,11 @@ export function ApplicationBoard({
             <Briefcase className="h-6 w-6 text-[var(--on-surface-soft)]" />
           </div>
           <h2 className="font-headline mt-5 text-2xl font-normal">
-            The pipeline starts <em className="serif-ital">here</em>.
+            {t("apps.empty.title.part1")}{" "}
+            <em className="serif-ital">{t("apps.empty.title.italic")}</em>.
           </h2>
           <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--on-surface-muted)]">
-            Track applications to see which resume versions land interviews.
+            {t("apps.empty.lead")}
           </p>
         </div>
       ) : (
@@ -148,7 +153,7 @@ export function ApplicationBoard({
               <div className="space-y-2">
                 {col.apps.length === 0 && (
                   <div className="rounded-[8px] py-6 text-center text-[12px] text-[var(--on-surface-faint)]">
-                    Empty
+                    {t("apps.col.empty")}
                   </div>
                 )}
                 {col.apps.map((app) => (

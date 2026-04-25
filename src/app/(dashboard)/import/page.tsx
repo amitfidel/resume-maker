@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, Loader2, Check, AlertCircle } from "lucide-react";
 import { saveImportedProfile } from "./actions";
+import { useT } from "@/lib/i18n/context";
 
 type ParsedData = {
   fullName: string;
@@ -52,6 +53,7 @@ export default function ImportPage() {
   const [parsed, setParsed] = useState<ParsedData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const t = useT();
 
   const handlePasteSubmit = useCallback(async () => {
     if (!pasteText.trim()) return;
@@ -163,19 +165,19 @@ export default function ImportPage() {
               value="paste"
               className="rounded-full px-4 py-1.5 text-[13px] font-medium text-[var(--on-surface-muted)] data-[state=active]:bg-[var(--surface-raised)] data-[state=active]:text-[var(--on-surface)] data-[state=active]:shadow-[var(--sh-1)]"
             >
-              Paste text
+              {t("import.tab.paste")}
             </TabsTrigger>
             <TabsTrigger
               value="upload"
               className="rounded-full px-4 py-1.5 text-[13px] font-medium text-[var(--on-surface-muted)] data-[state=active]:bg-[var(--surface-raised)] data-[state=active]:text-[var(--on-surface)] data-[state=active]:shadow-[var(--sh-1)]"
             >
-              Upload PDF
+              {t("import.tab.upload")}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="paste" className="space-y-4">
             <Textarea
-              placeholder="Paste your resume text here…"
+              placeholder={t("import.paste_ph")}
               rows={14}
               value={pasteText}
               onChange={(e) => setPasteText(e.target.value)}
@@ -189,12 +191,12 @@ export default function ImportPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Parsing…
+                  {t("import.parsing")}
                 </>
               ) : (
                 <>
                   <FileText className="mr-2 h-4 w-4" />
-                  Parse resume
+                  {t("import.parse")}
                 </>
               )}
             </Button>
@@ -206,7 +208,7 @@ export default function ImportPage() {
                 <Upload className="h-6 w-6 text-[var(--on-surface-muted)]" />
               </div>
               <p className="mb-4 text-sm text-[var(--on-surface-muted)]">
-                Upload a PDF resume file
+                {t("import.upload_lead")}
               </p>
               <Input
                 type="file"
@@ -218,7 +220,7 @@ export default function ImportPage() {
               {isLoading && (
                 <div className="font-mono mt-4 flex items-center gap-2 rounded-[10px] bg-[var(--surface-sunk)] px-3 py-2 text-[12px] text-[var(--on-surface-soft)]">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  Parsing PDF…
+                  {t("import.parsing_pdf")}
                 </div>
               )}
             </div>
@@ -228,24 +230,25 @@ export default function ImportPage() {
         <div className="space-y-4">
           <div className="resumi-card p-6">
             <h2 className="font-headline text-[24px] font-normal tracking-[-0.01em]">
-              Parsed <em className="serif-ital">results</em>
+              {t("import.parsed.title.part1")}{" "}
+              <em className="serif-ital">{t("import.parsed.title.italic")}</em>
             </h2>
             <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-              Review the extracted data before saving to your profile.
+              {t("import.parsed.lead")}
             </p>
             <div className="mt-5 space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <ParsedField label="Name" value={parsed.fullName} />
-                <ParsedField label="Headline" value={parsed.headline} />
-                <ParsedField label="Email" value={parsed.email} />
-                <ParsedField label="Location" value={parsed.location} />
+                <ParsedField label={t("import.parsed.name")} value={parsed.fullName} />
+                <ParsedField label={t("import.parsed.headline")} value={parsed.headline} />
+                <ParsedField label={t("import.parsed.email")} value={parsed.email} />
+                <ParsedField label={t("import.parsed.location")} value={parsed.location} />
               </div>
 
-              {parsed.summary && <ParsedField label="Summary" value={parsed.summary} />}
+              {parsed.summary && <ParsedField label={t("import.parsed.summary")} value={parsed.summary} />}
 
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
-                  Work experience ({parsed.workExperiences.length})
+                  {t("import.parsed.experience")} ({parsed.workExperiences.length})
                 </p>
                 <div className="mt-1.5 space-y-0.5">
                   {parsed.workExperiences.map((exp, i) => (
@@ -258,7 +261,7 @@ export default function ImportPage() {
 
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
-                  Education ({parsed.education.length})
+                  {t("import.parsed.education")} ({parsed.education.length})
                 </p>
                 <div className="mt-1.5 space-y-0.5">
                   {parsed.education.map((edu, i) => (
@@ -271,7 +274,7 @@ export default function ImportPage() {
 
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
-                  Skills ({parsed.skills.length})
+                  {t("import.parsed.skills")} ({parsed.skills.length})
                 </p>
                 <p className="mt-1.5 text-sm text-[var(--on-surface-soft)]">
                   {parsed.skills.map((s) => s.name).join(" · ") || "—"}
@@ -289,12 +292,12 @@ export default function ImportPage() {
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving…
+                  {t("import.saving")}
                 </>
               ) : (
                 <>
                   <Check className="mr-2 h-4 w-4" />
-                  Save to profile
+                  {t("import.save")}
                 </>
               )}
             </Button>
@@ -303,7 +306,7 @@ export default function ImportPage() {
               onClick={() => setParsed(null)}
               className="h-11 rounded-full border-0 bg-[var(--surface-raised)] px-5 text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
             >
-              Start over
+              {t("import.start_over")}
             </Button>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useCallback } from "react";
 import { EditableText } from "./editable-text";
 import { EditableDateRange } from "./editable-date-range";
 import { useConfirm } from "@/components/ui/confirm-dialog";
-import { useT } from "@/lib/i18n/context";
+import { useT, useI18n } from "@/lib/i18n/context";
 import { localizedHeading, notLegacy } from "@/lib/i18n/dictionary";
 import {
   updateSummary as _updateSummary,
@@ -333,6 +333,8 @@ function SectionHeadingEl({
   style: TemplateStyle;
 }) {
   const sh = style.sectionHeading;
+  const { locale } = useI18n();
+  const upper = sh.case === "upper" && locale !== "he";
 
   return (
     <h2
@@ -341,8 +343,8 @@ function SectionHeadingEl({
         fontSize: sh.size,
         fontWeight: sh.weight,
         color: sh.color,
-        letterSpacing: sh.tracking,
-        textTransform: sh.case === "upper" ? "uppercase" : "none",
+        letterSpacing: locale === "he" ? "normal" : sh.tracking,
+        textTransform: upper ? "uppercase" : "none",
         marginBottom: sh.marginBottom,
         borderBottom:
           sh.border === "bottom"
@@ -368,6 +370,7 @@ function SidebarHeading({
   children: React.ReactNode;
   style: TemplateStyle;
 }) {
+  const { locale } = useI18n();
   return (
     <h2
       className="mb-2 pb-1"
@@ -375,8 +378,8 @@ function SidebarHeading({
         fontFamily: style.headingFont,
         fontSize: "0.65rem",
         fontWeight: 700,
-        letterSpacing: "0.15em",
-        textTransform: "uppercase",
+        letterSpacing: locale === "he" ? "normal" : "0.15em",
+        textTransform: locale === "he" ? "none" : "uppercase",
         color: style.sidebarTextColor,
         borderBottom: `1px solid rgba(255,255,255,0.2)`,
       }}
@@ -454,6 +457,7 @@ function InteractiveBlock({
 
   const visibleItems = block.items.filter((i) => i.isVisible);
   const sh = style.sectionHeading;
+  const { locale } = useI18n();
 
   return (
     <section
@@ -480,8 +484,8 @@ function InteractiveBlock({
             fontSize: sh.size,
             fontWeight: sh.weight,
             color: sh.color,
-            letterSpacing: sh.tracking,
-            textTransform: sh.case === "upper" ? "uppercase" : "none",
+            letterSpacing: locale === "he" ? "normal" : sh.tracking,
+            textTransform: sh.case === "upper" && locale !== "he" ? "uppercase" : "none",
           }}
         />
         <button

@@ -281,6 +281,182 @@ const en: Dict = {
   "canvas.ph.issue_date": "Issue date",
   "canvas.ph.bullet": "Add a bullet point…",
   "canvas.contact": "Contact",
+
+  // --- profile pages ---
+  "profile.basic.title": "Basic info",
+  "profile.basic.lead":
+    "Contact details + the one-line headline hiring managers see first.",
+  "profile.basic.headline": "Professional headline",
+  "profile.basic.headline_ph": "Senior Software Engineer",
+  "profile.basic.location": "Location",
+  "profile.basic.location_ph": "San Francisco, CA",
+  "profile.basic.summary": "Professional summary",
+  "profile.basic.summary_ph":
+    "A short positioning paragraph — what you do, for whom, with what edge.",
+  "profile.basic.email": "Contact email",
+  "profile.basic.email_ph": "you@example.com",
+  "profile.basic.phone": "Phone",
+  "profile.basic.phone_ph": "+1 (555) 123-4567",
+  "profile.basic.linkedin": "LinkedIn",
+  "profile.basic.github": "GitHub",
+  "profile.basic.website": "Website",
+  "profile.basic.save": "Save changes",
+
+  "profile.exp.title": "Work experience",
+  "profile.exp.lead":
+    "Roles you've held. Add bullets for each — the AI can sharpen them later.",
+  "profile.exp.add": "Add experience",
+  "profile.exp.dialog_title": "Add experience",
+  "profile.exp.company": "Company",
+  "profile.exp.job_title": "Job title",
+  "profile.exp.location": "Location",
+  "profile.exp.location_ph": "City, State",
+  "profile.exp.start": "Start date",
+  "profile.exp.end": "End date",
+  "profile.exp.bullets": "Bullet points (one per line)",
+  "profile.exp.bullets_ph": "Led development of…\nIncreased revenue by…\nManaged a team of…",
+  "profile.exp.empty": "No work experience added yet.",
+
+  "profile.edu.title": "Education",
+  "profile.edu.lead": "Schools, degrees, and coursework.",
+  "profile.edu.add": "Add education",
+  "profile.edu.institution": "Institution",
+  "profile.edu.degree": "Degree",
+  "profile.edu.degree_ph": "B.S.",
+  "profile.edu.field": "Field of study",
+  "profile.edu.field_ph": "Computer Science",
+  "profile.edu.start": "Start date",
+  "profile.edu.end": "End date",
+  "profile.edu.gpa": "GPA (optional)",
+  "profile.edu.gpa_ph": "3.8/4.0",
+  "profile.edu.notes": "Notes (optional)",
+  "profile.edu.notes_ph": "Relevant coursework, honors, activities…",
+  "profile.edu.empty": "No education added yet.",
+
+  "profile.skills.title": "Skills",
+  "profile.skills.lead": "Tools, languages, and methods you use.",
+  "profile.skills.add": "Add skill",
+  "profile.skills.name": "Skill name",
+  "profile.skills.name_ph": "React",
+  "profile.skills.category": "Category",
+  "profile.skills.category_ph": "Frontend, Backend, Design…",
+  "profile.skills.proficiency": "Proficiency",
+  "profile.skills.proficiency_ph": "Expert · Proficient · Familiar",
+  "profile.skills.empty": "No skills added yet.",
+
+  "profile.proj.title": "Projects",
+  "profile.proj.lead": "Side builds, open source, portfolio pieces.",
+  "profile.proj.add": "Add project",
+  "profile.proj.name": "Project name",
+  "profile.proj.url": "URL",
+  "profile.proj.description": "Description",
+  "profile.proj.tech": "Technologies (comma-separated)",
+  "profile.proj.tech_ph": "React, TypeScript, PostgreSQL",
+  "profile.proj.bullets": "Key points (one per line)",
+  "profile.proj.empty": "No projects added yet.",
+
+  "profile.cert.title": "Certifications",
+  "profile.cert.lead": "Credentials, licenses, and certifications you hold.",
+  "profile.cert.add": "Add certification",
+  "profile.cert.name": "Certification name",
+  "profile.cert.issuer": "Issuer",
+  "profile.cert.issuer_ph": "AWS, Google, etc.",
+  "profile.cert.issued": "Issue date",
+  "profile.cert.expires": "Expiry date",
+  "profile.cert.url": "Credential URL",
+  "profile.cert.empty": "No certifications added yet.",
+
+  // --- applications board ---
+  "apps.search_ph": "Search applications…",
+  "apps.add": "Add application",
+  "apps.dialog_title": "Track a job application",
+  "apps.col.saved": "Saved",
+  "apps.col.applied": "Applied",
+  "apps.col.interviewing": "Interviewing",
+  "apps.col.offered": "Offered",
+  "apps.col.rejected": "Rejected",
+  "apps.col.empty": "Empty",
+  "apps.field.company": "Company",
+  "apps.field.position": "Position",
+  "apps.field.url": "Job URL",
+  "apps.field.applied_date": "Applied date",
+  "apps.field.salary": "Salary range",
+  "apps.field.salary_ph": "$120k - $150k",
+  "apps.field.notes": "Notes",
+  "apps.empty.title.part1": "The pipeline starts",
+  "apps.empty.title.italic": "here",
+  "apps.empty.lead":
+    "Track applications to see which resume versions land interviews.",
+
+  // --- import page body ---
+  "import.tab.paste": "Paste text",
+  "import.tab.upload": "Upload PDF",
+  "import.paste_ph": "Paste your resume text here…",
+  "import.parse": "Parse resume",
+  "import.parsing": "Parsing…",
+  "import.upload_lead": "Upload a PDF resume file",
+  "import.parsing_pdf": "Parsing PDF…",
+  "import.parsed.title.part1": "Parsed",
+  "import.parsed.title.italic": "results",
+  "import.parsed.lead": "Review the extracted data before saving to your profile.",
+  "import.parsed.name": "Name",
+  "import.parsed.headline": "Headline",
+  "import.parsed.email": "Email",
+  "import.parsed.location": "Location",
+  "import.parsed.summary": "Summary",
+  "import.parsed.experience": "Work experience",
+  "import.parsed.education": "Education",
+  "import.parsed.skills": "Skills",
+  "import.save": "Save to profile",
+  "import.saving": "Saving…",
+  "import.start_over": "Start over",
+
+  // --- version history ---
+  "history.empty.title.part1": "No versions",
+  "history.empty.title.italic": "yet",
+  "history.empty.lead":
+    "Click Save Version in the toolbar to capture a snapshot. You can return to any version later.",
+  "history.by_ai": "AI",
+  "history.by_you": "You",
+  "history.preview": "Preview",
+  "history.restore": "Restore",
+  "history.delete": "Delete",
+  "history.untitled": "Untitled version",
+  "history.confirm.restore.title": "Restore version",
+  "history.confirm.restore.desc":
+    "Your current state is auto-saved as a new version first. You can always undo.",
+  "history.confirm.restore.cta": "Restore",
+  "history.confirm.delete.title": "Delete version",
+  "history.confirm.delete.desc": "This version is gone for good.",
+  "history.confirm.delete.cta": "Delete",
+  "history.preview.failed": "Could not load version preview.",
+
+  // --- AI rewrite popover ---
+  "rewrite.title": "AI suggestion",
+  "rewrite.improve": "Improve",
+  "rewrite.metrics": "Add metrics",
+  "rewrite.rewriting": "Rewriting…",
+  "rewrite.accept": "Accept",
+  "rewrite.retry": "Retry",
+  "rewrite.cancel": "Cancel",
+
+  // --- AI review panel ---
+  "review.empty": "Get AI-powered feedback on your resume.",
+  "review.run": "Review my resume",
+  "review.running": "Analyzing your resume…",
+  "review.again": "Review again",
+
+  // --- Job tailor panel ---
+  "tailor.title": "Job tailor",
+  "tailor.lead": "Paste a job description to get tailoring suggestions.",
+  "tailor.placeholder": "Paste the job description here…",
+  "tailor.analyze": "Analyze match",
+  "tailor.analyzing": "Analyzing…",
+  "tailor.match_score": "Match score",
+  "tailor.matched": "Matched keywords",
+  "tailor.missing": "Missing keywords",
+  "tailor.suggestions": "Suggestions",
+  "tailor.try_another": "Try another job",
   // Default headings — translated when block.heading equals the English default
   "canvas.heading.summary": "Summary",
   "canvas.heading.experience": "Work Experience",
@@ -557,6 +733,181 @@ const he: Dict = {
   "canvas.ph.issue_date": "תאריך הנפקה",
   "canvas.ph.bullet": "הוסף נקודה…",
   "canvas.contact": "פרטי קשר",
+
+  // --- profile pages ---
+  "profile.basic.title": "פרטי בסיס",
+  "profile.basic.lead": "פרטי קשר וכותרת מקצועית קצרה שמגייסים רואים ראשונה.",
+  "profile.basic.headline": "כותרת מקצועית",
+  "profile.basic.headline_ph": "מהנדס תוכנה בכיר",
+  "profile.basic.location": "מיקום",
+  "profile.basic.location_ph": "תל אביב",
+  "profile.basic.summary": "סיכום מקצועי",
+  "profile.basic.summary_ph":
+    "פסקת מיצוב קצרה — מה אתה עושה, עבור מי, ובמה אתה ייחודי.",
+  "profile.basic.email": "אימייל ליצירת קשר",
+  "profile.basic.email_ph": "you@example.com",
+  "profile.basic.phone": "טלפון",
+  "profile.basic.phone_ph": "+972 50 123 4567",
+  "profile.basic.linkedin": "LinkedIn",
+  "profile.basic.github": "GitHub",
+  "profile.basic.website": "אתר",
+  "profile.basic.save": "שמור שינויים",
+
+  "profile.exp.title": "ניסיון תעסוקתי",
+  "profile.exp.lead":
+    "תפקידים שמילאת. הוסף נקודות לכל אחד — ה־AI יחדד אותן אחר כך.",
+  "profile.exp.add": "הוסף ניסיון",
+  "profile.exp.dialog_title": "הוסף ניסיון",
+  "profile.exp.company": "חברה",
+  "profile.exp.job_title": "תפקיד",
+  "profile.exp.location": "מיקום",
+  "profile.exp.location_ph": "עיר, מדינה",
+  "profile.exp.start": "תאריך התחלה",
+  "profile.exp.end": "תאריך סיום",
+  "profile.exp.bullets": "נקודות (אחת בכל שורה)",
+  "profile.exp.bullets_ph": "הובלתי פיתוח של…\nהגדלתי הכנסות ב…\nניהלתי צוות של…",
+  "profile.exp.empty": "עדיין לא הוסף ניסיון תעסוקתי.",
+
+  "profile.edu.title": "השכלה",
+  "profile.edu.lead": "מוסדות לימוד, תארים וקורסים.",
+  "profile.edu.add": "הוסף השכלה",
+  "profile.edu.institution": "מוסד לימודים",
+  "profile.edu.degree": "תואר",
+  "profile.edu.degree_ph": "B.Sc.",
+  "profile.edu.field": "תחום לימוד",
+  "profile.edu.field_ph": "מדעי המחשב",
+  "profile.edu.start": "תאריך התחלה",
+  "profile.edu.end": "תאריך סיום",
+  "profile.edu.gpa": "ממוצע (לא חובה)",
+  "profile.edu.gpa_ph": "92",
+  "profile.edu.notes": "הערות (לא חובה)",
+  "profile.edu.notes_ph": "קורסים רלוונטיים, הצטיינות, פעילויות…",
+  "profile.edu.empty": "עדיין לא הוסף השכלה.",
+
+  "profile.skills.title": "מיומנויות",
+  "profile.skills.lead": "כלים, שפות ושיטות עבודה.",
+  "profile.skills.add": "הוסף מיומנות",
+  "profile.skills.name": "שם המיומנות",
+  "profile.skills.name_ph": "React",
+  "profile.skills.category": "קטגוריה",
+  "profile.skills.category_ph": "Frontend, Backend, עיצוב…",
+  "profile.skills.proficiency": "רמה",
+  "profile.skills.proficiency_ph": "מומחה · בקיא · מכיר",
+  "profile.skills.empty": "עדיין לא הוספו מיומנויות.",
+
+  "profile.proj.title": "פרויקטים",
+  "profile.proj.lead": "פרויקטים אישיים, קוד פתוח, פורטפוליו.",
+  "profile.proj.add": "הוסף פרויקט",
+  "profile.proj.name": "שם הפרויקט",
+  "profile.proj.url": "קישור",
+  "profile.proj.description": "תיאור",
+  "profile.proj.tech": "טכנולוגיות (מופרדות בפסיקים)",
+  "profile.proj.tech_ph": "React, TypeScript, PostgreSQL",
+  "profile.proj.bullets": "נקודות עיקריות (אחת בכל שורה)",
+  "profile.proj.empty": "עדיין לא הוספו פרויקטים.",
+
+  "profile.cert.title": "הסמכות",
+  "profile.cert.lead": "תעודות, רישיונות והסמכות שיש לך.",
+  "profile.cert.add": "הוסף הסמכה",
+  "profile.cert.name": "שם ההסמכה",
+  "profile.cert.issuer": "מנפיק",
+  "profile.cert.issuer_ph": "AWS, Google וכו'",
+  "profile.cert.issued": "תאריך הנפקה",
+  "profile.cert.expires": "תאריך תפוגה",
+  "profile.cert.url": "קישור לתעודה",
+  "profile.cert.empty": "עדיין לא הוספו הסמכות.",
+
+  // --- applications board ---
+  "apps.search_ph": "חיפוש מועמדויות…",
+  "apps.add": "הוסף מועמדות",
+  "apps.dialog_title": "מעקב אחר מועמדות",
+  "apps.col.saved": "שמור",
+  "apps.col.applied": "הוגש",
+  "apps.col.interviewing": "בראיונות",
+  "apps.col.offered": "התקבלתי",
+  "apps.col.rejected": "נדחה",
+  "apps.col.empty": "ריק",
+  "apps.field.company": "חברה",
+  "apps.field.position": "תפקיד",
+  "apps.field.url": "קישור למשרה",
+  "apps.field.applied_date": "תאריך הגשה",
+  "apps.field.salary": "טווח שכר",
+  "apps.field.salary_ph": "₪25k - ₪35k",
+  "apps.field.notes": "הערות",
+  "apps.empty.title.part1": "צינור המועמדויות מתחיל",
+  "apps.empty.title.italic": "כאן",
+  "apps.empty.lead":
+    "עקוב אחר מועמדויות כדי לראות איזו גרסת קורות חיים מביאה ראיונות.",
+
+  // --- import page body ---
+  "import.tab.paste": "הדבקת טקסט",
+  "import.tab.upload": "העלאת PDF",
+  "import.paste_ph": "הדבק כאן את טקסט קורות החיים שלך…",
+  "import.parse": "נתח קורות חיים",
+  "import.parsing": "מנתח…",
+  "import.upload_lead": "העלה קובץ PDF של קורות חיים",
+  "import.parsing_pdf": "מנתח PDF…",
+  "import.parsed.title.part1": "תוצאות",
+  "import.parsed.title.italic": "הניתוח",
+  "import.parsed.lead": "סקור את הנתונים שחולצו לפני שמירתם בפרופיל.",
+  "import.parsed.name": "שם",
+  "import.parsed.headline": "כותרת",
+  "import.parsed.email": "אימייל",
+  "import.parsed.location": "מיקום",
+  "import.parsed.summary": "סיכום",
+  "import.parsed.experience": "ניסיון תעסוקתי",
+  "import.parsed.education": "השכלה",
+  "import.parsed.skills": "מיומנויות",
+  "import.save": "שמור בפרופיל",
+  "import.saving": "שומר…",
+  "import.start_over": "התחל מחדש",
+
+  // --- version history ---
+  "history.empty.title.part1": "עדיין אין",
+  "history.empty.title.italic": "גרסאות",
+  "history.empty.lead":
+    "לחץ על 'שמור גרסה' בסרגל הכלים כדי לתעד תמונת מצב. תמיד תוכל לחזור לגרסה.",
+  "history.by_ai": "AI",
+  "history.by_you": "אתה",
+  "history.preview": "תצוגה מקדימה",
+  "history.restore": "שחזר",
+  "history.delete": "מחיקה",
+  "history.untitled": "גרסה ללא שם",
+  "history.confirm.restore.title": "לשחזר גרסה",
+  "history.confirm.restore.desc":
+    "המצב הנוכחי יישמר כגרסה חדשה לפני השחזור. תמיד אפשר לבטל.",
+  "history.confirm.restore.cta": "שחזר",
+  "history.confirm.delete.title": "למחוק גרסה",
+  "history.confirm.delete.desc": "הגרסה תאבד לתמיד.",
+  "history.confirm.delete.cta": "מחק",
+  "history.preview.failed": "טעינת התצוגה המקדימה נכשלה.",
+
+  // --- AI rewrite popover ---
+  "rewrite.title": "הצעת AI",
+  "rewrite.improve": "שפר",
+  "rewrite.metrics": "הוסף מדדים",
+  "rewrite.rewriting": "משכתב…",
+  "rewrite.accept": "אשר",
+  "rewrite.retry": "נסה שוב",
+  "rewrite.cancel": "ביטול",
+
+  // --- AI review panel ---
+  "review.empty": "קבל פידבק חכם מ־AI על קורות החיים.",
+  "review.run": "סקור את קורות החיים",
+  "review.running": "מנתח את קורות החיים…",
+  "review.again": "סקור שוב",
+
+  // --- Job tailor panel ---
+  "tailor.title": "התאמה למשרה",
+  "tailor.lead": "הדבק תיאור משרה כדי לקבל הצעות התאמה.",
+  "tailor.placeholder": "הדבק כאן את תיאור המשרה…",
+  "tailor.analyze": "נתח התאמה",
+  "tailor.analyzing": "מנתח…",
+  "tailor.match_score": "ציון התאמה",
+  "tailor.matched": "מילות מפתח תואמות",
+  "tailor.missing": "מילות מפתח חסרות",
+  "tailor.suggestions": "הצעות",
+  "tailor.try_another": "נסה משרה אחרת",
   // Default headings (translate if user hasn't overridden)
   "canvas.heading.summary": "סיכום",
   "canvas.heading.experience": "ניסיון תעסוקתי",
@@ -618,4 +969,34 @@ const LEGACY_SEEDS = new Set([
 export function notLegacy(v: string | null | undefined): string {
   if (!v) return "";
   return LEGACY_SEEDS.has(v) ? "" : v;
+}
+
+/**
+ * True if every meaningful field of an item is empty (after stripping
+ * legacy seed values). Used by template renderers to skip items that
+ * would otherwise show as "·" or "in" with nothing on either side.
+ */
+export function isItemEmpty(
+  type: "experience" | "education" | "skill" | "project" | "certification" | "custom",
+  data: unknown,
+): boolean {
+  const d = data as Record<string, string | undefined | null>;
+  switch (type) {
+    case "experience":
+      return !notLegacy(d.title) && !notLegacy(d.company);
+    case "education":
+      return (
+        !notLegacy(d.degree) && !notLegacy(d.institution) && !d.fieldOfStudy
+      );
+    case "skill":
+      return !notLegacy(d.name);
+    case "project":
+      return !notLegacy(d.name);
+    case "certification":
+      return !notLegacy(d.name);
+    case "custom":
+      return !d.title && !d.text;
+    default:
+      return false;
+  }
 }

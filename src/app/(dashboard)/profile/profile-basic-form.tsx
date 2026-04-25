@@ -6,44 +6,46 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { updateCareerProfile } from "./actions";
 import type { CareerProfile } from "@/db/schema";
+import { useT } from "@/lib/i18n/context";
 
 export function ProfileBasicForm({
   profile,
 }: {
   profile: CareerProfile | undefined;
 }) {
+  const t = useT();
   return (
     <div className="resumi-card p-6 sm:p-7">
       <div className="mb-5">
         <h2 className="font-headline text-[26px] font-normal tracking-[-0.015em]">
-          Basic <em className="serif-ital">info</em>
+          {t("profile.basic.title")}
         </h2>
         <p className="mt-0.5 text-sm text-[var(--on-surface-muted)]">
-          Contact details + the one-line headline hiring managers see first.
+          {t("profile.basic.lead")}
         </p>
       </div>
       <form action={updateCareerProfile} className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="headline" className="text-xs text-[var(--on-surface-muted)]">
-              Professional headline
+              {t("profile.basic.headline")}
             </Label>
             <Input
               id="headline"
               name="headline"
-              placeholder="Senior Software Engineer"
+              placeholder={t("profile.basic.headline_ph")}
               defaultValue={profile?.headline ?? ""}
               className="resumi-input"
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="location" className="text-xs text-[var(--on-surface-muted)]">
-              Location
+              {t("profile.basic.location")}
             </Label>
             <Input
               id="location"
               name="location"
-              placeholder="San Francisco, CA"
+              placeholder={t("profile.basic.location_ph")}
               defaultValue={profile?.location ?? ""}
               className="resumi-input"
             />
@@ -52,12 +54,12 @@ export function ProfileBasicForm({
 
         <div className="space-y-1.5">
           <Label htmlFor="summary" className="text-xs text-[var(--on-surface-muted)]">
-            Professional summary
+            {t("profile.basic.summary")}
           </Label>
           <Textarea
             id="summary"
             name="summary"
-            placeholder="A short positioning paragraph — what you do, for whom, with what edge."
+            placeholder={t("profile.basic.summary_ph")}
             rows={4}
             defaultValue={profile?.summary ?? ""}
             className="resumi-input"
@@ -67,25 +69,25 @@ export function ProfileBasicForm({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-xs text-[var(--on-surface-muted)]">
-              Contact email
+              {t("profile.basic.email")}
             </Label>
             <Input
               id="email"
               name="email"
               type="email"
-              placeholder="you@example.com"
+              placeholder={t("profile.basic.email_ph")}
               defaultValue={profile?.email ?? ""}
               className="resumi-input"
             />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="phone" className="text-xs text-[var(--on-surface-muted)]">
-              Phone
+              {t("profile.basic.phone")}
             </Label>
             <Input
               id="phone"
               name="phone"
-              placeholder="+1 (555) 123-4567"
+              placeholder={t("profile.basic.phone_ph")}
               defaultValue={profile?.phone ?? ""}
               className="resumi-input"
             />
@@ -95,7 +97,7 @@ export function ProfileBasicForm({
         <div className="grid gap-4 md:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="linkedinUrl" className="text-xs text-[var(--on-surface-muted)]">
-              LinkedIn
+              {t("profile.basic.linkedin")}
             </Label>
             <Input
               id="linkedinUrl"
@@ -107,7 +109,7 @@ export function ProfileBasicForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="githubUrl" className="text-xs text-[var(--on-surface-muted)]">
-              GitHub
+              {t("profile.basic.github")}
             </Label>
             <Input
               id="githubUrl"
@@ -119,7 +121,7 @@ export function ProfileBasicForm({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="websiteUrl" className="text-xs text-[var(--on-surface-muted)]">
-              Website
+              {t("profile.basic.website")}
             </Label>
             <Input
               id="websiteUrl"
@@ -135,7 +137,7 @@ export function ProfileBasicForm({
           type="submit"
           className="magical-gradient magic-shine h-10 rounded-full px-5"
         >
-          Save changes
+          {t("profile.basic.save")}
         </Button>
       </form>
     </div>

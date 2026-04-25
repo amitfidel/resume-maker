@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, X } from "lucide-react";
+import { useT } from "@/lib/i18n/context";
 
 type Props = {
   resumeId: string;
@@ -12,6 +13,7 @@ type Props = {
 export function AiReviewPanel({ resumeId, onClose }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [review, setReview] = useState("");
+  const t = useT();
 
   const handleReview = useCallback(async () => {
     setReview("");
@@ -76,7 +78,7 @@ export function AiReviewPanel({ resumeId, onClose }: Props) {
               <Sparkles className="h-5 w-5 text-[var(--magic-1)]" />
             </div>
             <p className="text-sm text-[var(--on-surface-muted)]">
-              Get AI-powered feedback on your resume.
+              {t("review.empty")}
             </p>
             <Button
               onClick={handleReview}
@@ -84,7 +86,7 @@ export function AiReviewPanel({ resumeId, onClose }: Props) {
               className="magical-gradient magic-shine mt-4 rounded-full"
             >
               <Sparkles className="mr-2 h-3.5 w-3.5" />
-              Review my resume
+              {t("review.run")}
             </Button>
           </div>
         )}
@@ -92,7 +94,7 @@ export function AiReviewPanel({ resumeId, onClose }: Props) {
         {isLoading && (
           <div className="font-mono flex items-center gap-2 rounded-[10px] bg-[var(--surface-sunk)] px-3 py-2.5 text-[12px] text-[var(--on-surface-soft)]">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            Analyzing your resume…
+            {t("review.running")}
           </div>
         )}
 
@@ -112,7 +114,7 @@ export function AiReviewPanel({ resumeId, onClose }: Props) {
               className="w-full rounded-full border-0 bg-[var(--surface-raised)] text-[var(--on-surface)] shadow-[inset_0_0_0_1px_var(--border-ghost-strong)] hover:shadow-[inset_0_0_0_1px_var(--ink)]"
             >
               <Sparkles className="mr-2 h-3.5 w-3.5" />
-              Review again
+              {t("review.again")}
             </Button>
           </div>
         )}
