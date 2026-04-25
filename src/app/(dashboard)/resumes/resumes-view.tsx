@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Plus, Sparkles } from "lucide-react";
-import { createResume } from "./actions";
+import { ArrowUpRight, Plus, Sparkles, Copy } from "lucide-react";
+import { createResume, cloneResume } from "./actions";
 import { useT } from "@/lib/i18n/context";
 
 type ResumeRow = {
@@ -81,7 +81,7 @@ export function ResumesView({ firstName, resumes }: Props) {
               "0 40px 80px -30px rgba(0,0,0,0.6), 0 16px 40px -20px rgba(109,60,255,0.35)",
           }}
         >
-          <MiniPaper />
+          <MiniPaper title={firstName || undefined} />
         </div>
       </div>
 
@@ -117,38 +117,57 @@ export function ResumesView({ firstName, resumes }: Props) {
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {resumes.map((resume) => (
-            <Link
+            <div
               key={resume.id}
-              href={`/resumes/${resume.id}/edit`}
               className="group relative flex flex-col overflow-hidden rounded-2xl bg-[var(--surface-raised)] shadow-[var(--sh-1)] transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] hover:-translate-y-1 hover:shadow-[var(--sh-3)]"
             >
-              <div
-                className="mx-3.5 mt-3.5 aspect-[8.5/11] overflow-hidden rounded shadow-[inset_0_0_0_1px_var(--border-ghost),0_4px_16px_-6px_rgba(14,18,32,0.1)]"
-                style={{ background: "white" }}
+              {/* Absolute action overlay (visible on hover only). Outside the
+                  Link so clicks don't navigate to the editor. */}
+              <form
+                action={cloneResume.bind(null, resume.id)}
+                className="absolute end-3 top-3 z-10 opacity-0 transition-opacity group-hover:opacity-100"
               >
-                <MiniPaper
-                  title={resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
-                  variant={idToVariant(resume.id)}
-                />
-              </div>
-              <div className="px-4 pb-4 pt-3.5">
-                <div className="truncate text-[14px] font-medium text-[var(--on-surface)]">
-                  {resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
+                <button
+                  type="submit"
+                  title={t("resumes.clone")}
+                  aria-label={t("resumes.clone")}
+                  className="grid h-8 w-8 place-items-center rounded-[10px] bg-[var(--surface-raised)] text-[var(--on-surface-muted)] shadow-[var(--sh-2)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </form>
+              <Link
+                href={`/resumes/${resume.id}/edit`}
+                className="flex flex-1 flex-col"
+              >
+                <div
+                  className="mx-3.5 mt-3.5 aspect-[8.5/11] overflow-hidden rounded shadow-[inset_0_0_0_1px_var(--border-ghost),0_4px_16px_-6px_rgba(14,18,32,0.1)]"
+                  style={{ background: "white" }}
+                >
+                  <MiniPaper
+                    title={firstName || undefined}
+                    variant={idToVariant(resume.id)}
+                  />
                 </div>
-                <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[var(--on-surface-muted)]">
-                  <span
-                    className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] ${
-                      resume.status === "active"
-                        ? "bg-[var(--magic-tint)] text-[var(--magic-1)]"
-                        : "bg-[var(--surface-sunk)] text-[var(--on-surface-soft)]"
-                    }`}
-                  >
-                    {resume.status}
-                  </span>
-                  <span>{new Date(resume.updatedAt).toLocaleDateString()}</span>
+                <div className="px-4 pb-4 pt-3.5">
+                  <div className="truncate text-[14px] font-medium text-[var(--on-surface)]">
+                    {resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[var(--on-surface-muted)]">
+                    <span
+                      className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.04em] ${
+                        resume.status === "active"
+                          ? "bg-[var(--magic-tint)] text-[var(--magic-1)]"
+                          : "bg-[var(--surface-sunk)] text-[var(--on-surface-soft)]"
+                      }`}
+                    >
+                      {resume.status}
+                    </span>
+                    <span>{new Date(resume.updatedAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           ))}
 
           {/* New resume card */}

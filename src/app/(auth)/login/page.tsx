@@ -12,18 +12,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { signIn, signInWithGoogle } from "../actions";
+import {
+  signIn,
+  signInWithGoogle,
+  signInWithMagicLink,
+  requestPasswordReset,
+} from "../actions";
 import { useT } from "@/lib/i18n/context";
 
 export default function LoginPage() {
   const t = useT();
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
+  const [email, setEmail] = useState("");
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
     setError(null);
+    setInfo(null);
     const result = await signIn(formData);
     if (result?.error) {
       setError(result.error);
@@ -33,10 +40,49 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     setLoading(true);
+    setInfo(null);
     const result = await signInWithGoogle();
     if (result?.error) {
       setError(result.error);
       setLoading(false);
+    }
+  }
+
+  async function handleMagicLink() {
+    if (!email) {
+      setError(t("auth.login.magic_need_email"));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setInfo(null);
+    const fd = new FormData();
+    fd.set("email", email);
+    const result = await signInWithMagicLink(fd);
+    setLoading(false);
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      setInfo(t("auth.login.magic_sent"));
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (!email) {
+      setError(t("auth.login.magic_need_email"));
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    setInfo(null);
+    const fd = new FormData();
+    fd.set("email", email);
+    const result = await requestPasswordReset(fd);
+    setLoading(false);
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      setInfo(t("auth.login.reset_sent"));
     }
   }
 
@@ -105,11 +151,23 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">{t("auth.login.password")}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">{t("auth.login.password")}</Label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={loading}
+                  className="text-xs text-[var(--magic-1)] hover:underline disabled:opacity-50 dark:text-[var(--magic-2)]"
+                >
+                  {t("auth.login.forgot")}
+                </button>
+              </div>
               <Input
                 id="password"
                 name="password"
@@ -121,6 +179,9 @@ export default function LoginPage() {
             {error && (
               <p className="text-sm text-[var(--destructive)]">{error}</p>
             )}
+            {info && (
+              <p className="text-sm text-[var(--success)]">{info}</p>
+            )}
 
             <Button
               type="submit"
@@ -128,6 +189,16 @@ export default function LoginPage() {
               disabled={loading}
             >
               {loading ? t("auth.login.submitting") : t("auth.login.submit")}
+            </Button>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleMagicLink}
+              disabled={loading}
+              className="h-10 w-full rounded-full text-[13px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+            >
+              {loading ? t("auth.login.magic_sending") : t("auth.login.magic")}
             </Button>
           </form>
 

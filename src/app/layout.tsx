@@ -26,10 +26,47 @@ const geistMono = Geist_Mono({
   weight: ["400", "500"],
 });
 
+const SITE_NAME = "Resumi";
+const SITE_TITLE = "Resumi — Your career, composed.";
+const SITE_DESCRIPTION =
+  "Resumi is the editorial AI resume workspace. Compose, tailor, and track polished resumes with a smooth, thoughtful editor.";
+
 export const metadata: Metadata = {
-  title: "Resumi — Your career, composed.",
-  description:
-    "Resumi is the editorial AI resume workspace. Compose, tailor, and track polished resumes with a smooth, thoughtful editor.",
+  title: {
+    default: SITE_TITLE,
+    template: "%s · Resumi",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME }],
+  keywords: [
+    "resume builder",
+    "AI resume",
+    "CV maker",
+    "career",
+    "job search",
+    "Resumi",
+  ],
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    locale: "en_US",
+    alternateLocale: ["he_IL"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default async function RootLayout({

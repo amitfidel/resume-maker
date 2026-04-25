@@ -15,6 +15,7 @@ import { AiChatPanel } from "./ai-chat-panel";
 import { VersionHistory } from "./version-history";
 import { SaveVersionButton } from "./save-version-button";
 import { SaveIndicator } from "./save-indicator";
+import { ShareButton } from "./share-button";
 import { TemplateRenderer } from "@/templates/renderer";
 import { useT, useI18n } from "@/lib/i18n/context";
 import type { ResolvedResume } from "@/lib/resume/types";
@@ -29,6 +30,9 @@ type Props = {
 export function EditorShell({ resume }: Props) {
   const [rightPanel, setRightPanel] = useState<RightPanel>("none");
   const [activeTab, setActiveTab] = useState<ViewTab>("editor");
+  // Mobile-only sub-mode for the "editor" tab — pick which panel to show
+  // because both don't fit side-by-side on narrow screens.
+  const [mobileView, setMobileView] = useState<"content" | "canvas">("content");
   const router = useRouter();
   const t = useT();
   const { locale } = useI18n();
@@ -80,6 +84,7 @@ export function EditorShell({ resume }: Props) {
             <>
               <TemplateDialog resumeId={resume.id} currentTemplateId={resume.templateId} />
               <SaveVersionButton resumeId={resume.id} />
+              <ShareButton resumeId={resume.id} />
               <Button
                 size="sm"
                 onClick={() => togglePanel("ai-chat")}
@@ -132,14 +137,41 @@ export function EditorShell({ resume }: Props) {
       </div>
 
       {/* Editor body - changes based on active tab */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
         {activeTab === "editor" && (
           <>
+            {/* Mobile-only sub-tabs to switch between content + preview */}
+            <div className="absolute bottom-4 left-1/2 z-30 -translate-x-1/2 lg:hidden">
+              <div className="inline-flex rounded-full bg-[var(--ink)] p-[3px] shadow-[var(--sh-3)]">
+                {(["content", "canvas"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setMobileView(m)}
+                    className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-all ${
+                      mobileView === m
+                        ? "bg-[var(--cream)] text-[var(--ink)]"
+                        : "text-[var(--cream)]/70"
+                    }`}
+                  >
+                    {m === "content" ? t("ce.eyebrow") : t("editor.tab.preview")}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Left — form-style content editor */}
-            <ContentEditor />
+            <div
+              className={mobileView === "content" ? "block" : "hidden lg:block"}
+            >
+              <ContentEditor />
+            </div>
 
             {/* Center — live resume canvas (still inline-editable) */}
-            <main className="flex-1 overflow-y-auto bg-[var(--surface-sunk)] p-8">
+            <main
+              className={`flex-1 overflow-y-auto bg-[var(--surface-sunk)] p-4 sm:p-8 ${
+                mobileView === "canvas" ? "block" : "hidden lg:block"
+              }`}
+            >
               <div className="mx-auto max-w-[820px]">
                 <ResumePreview />
               </div>

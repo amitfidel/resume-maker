@@ -11,7 +11,7 @@ export default function DashboardLayout({
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
         <ViewTransition>
-          <div className="mx-auto max-w-6xl p-6">{children}</div>
+          <div className="mx-auto max-w-6xl p-4 sm:p-6">{children}</div>
         </ViewTransition>
       </main>
     </div>

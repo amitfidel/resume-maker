@@ -55,7 +55,7 @@ export function JobTailorPanel({ resumeId, onClose }: Props) {
   }, [resumeId, jd]);
 
   return (
-    <aside className="flex h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)]">
+    <aside className="absolute inset-0 z-20 flex h-full shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)] lg:relative lg:w-[360px]">
       <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
         <div className="flex items-center gap-2.5">
           <div

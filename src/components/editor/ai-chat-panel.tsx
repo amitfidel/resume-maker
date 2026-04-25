@@ -107,27 +107,116 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
           }),
         });
 
-        const data = await res.json();
-
         if (!res.ok) {
+          // Non-2xx — server still returns JSON for fatal errors.
+          let errorText = "Something went wrong";
+          try {
+            const data = await res.json();
+            errorText = data.error ?? errorText;
+          } catch {
+            // ignore parse failure, fall through with default
+          }
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
-              content: `Sorry, I ran into an error: ${data.error ?? "Something went wrong"}`,
+              content: `Sorry, I ran into an error: ${errorText}`,
+            },
+          ]);
+        } else if (!res.body) {
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "No response body from server.",
             },
           ]);
         } else {
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: data.text,
-              actions: data.actions,
-            },
-          ]);
+          // Push a fresh assistant message that we'll mutate in-place as
+          // text and action events stream in.
+          let assistantIndex = -1;
+          setMessages((prev) => {
+            assistantIndex = prev.length;
+            return [...prev, { role: "assistant", content: "", actions: [] }];
+          });
 
-          if (data.actions && data.actions.length > 0) {
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let actionCount = 0;
+
+          // eslint-disable-next-line no-constant-condition
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            // NDJSON: handle complete lines, leave any partial tail for the
+            // next iteration.
+            let nl: number;
+            while ((nl = buffer.indexOf("\n")) >= 0) {
+              const line = buffer.slice(0, nl).trim();
+              buffer = buffer.slice(nl + 1);
+              if (!line) continue;
+              try {
+                const evt = JSON.parse(line) as
+                  | { type: "text-delta"; delta: string }
+                  | { type: "action"; tool: string; description: string }
+                  | { type: "error"; error: string }
+                  | { type: "done" };
+
+                if (evt.type === "text-delta") {
+                  setMessages((prev) => {
+                    const next = [...prev];
+                    const target = next[assistantIndex];
+                    if (target) {
+                      next[assistantIndex] = {
+                        ...target,
+                        content: target.content + evt.delta,
+                      };
+                    }
+                    return next;
+                  });
+                } else if (evt.type === "action") {
+                  actionCount++;
+                  setMessages((prev) => {
+                    const next = [...prev];
+                    const target = next[assistantIndex];
+                    if (target) {
+                      next[assistantIndex] = {
+                        ...target,
+                        actions: [
+                          ...(target.actions ?? []),
+                          { tool: evt.tool, description: evt.description },
+                        ],
+                      };
+                    }
+                    return next;
+                  });
+                } else if (evt.type === "error") {
+                  setMessages((prev) => {
+                    const next = [...prev];
+                    const target = next[assistantIndex];
+                    if (target) {
+                      next[assistantIndex] = {
+                        ...target,
+                        content:
+                          target.content +
+                          (target.content ? "\n\n" : "") +
+                          `Error: ${evt.error}`,
+                      };
+                    }
+                    return next;
+                  });
+                }
+                // "done" — nothing to do
+              } catch {
+                // malformed line — skip
+              }
+            }
+          }
+
+          if (actionCount > 0) {
             router.refresh();
           }
         }
@@ -151,7 +240,7 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
   };
 
   return (
-    <aside className="flex h-full w-[360px] shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)]">
+    <aside className="absolute inset-0 z-20 flex h-full shrink-0 flex-col overflow-hidden border-l border-[var(--border-ghost)] bg-[var(--surface-raised)] lg:relative lg:w-[360px]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
         <div className="flex items-center gap-2.5">

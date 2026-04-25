@@ -260,7 +260,7 @@ export function ContentEditor() {
   };
 
   return (
-    <div className="flex h-full w-[460px] flex-shrink-0 flex-col overflow-hidden border-r border-[var(--border-ghost)] bg-[var(--surface-raised)]">
+    <div className="flex h-full w-full flex-shrink-0 flex-col overflow-hidden border-r border-[var(--border-ghost)] bg-[var(--surface-raised)] lg:w-[460px]">
       <div className="flex items-center justify-between border-b border-[var(--border-ghost)] px-5 py-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">

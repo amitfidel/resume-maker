@@ -519,6 +519,76 @@ export async function changeTemplate(resumeId: string, templateId: string) {
 /**
  * Delete a resume.
  */
+/**
+ * Duplicate an existing resume — copies the resume row plus every block
+ * and block-item with their overrides intact. Items still point at the
+ * same underlying profile rows (work_experiences, skills, etc.) so
+ * editing the profile updates both copies; per-resume overrides stay
+ * isolated. Useful for tailoring: clone a base resume, then tweak the
+ * copy for a specific role.
+ */
+export async function cloneResume(sourceResumeId: string) {
+  const user = await requireUser();
+
+  const source = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, sourceResumeId), eq(resumes.userId, user.id)),
+  });
+  if (!source) return;
+
+  // Insert the new resume row
+  const [newResume] = await db
+    .insert(resumes)
+    .values({
+      userId: user.id,
+      title: `${source.title} (copy)`,
+      templateId: source.templateId,
+      status: "draft",
+      summaryOverride: source.summaryOverride,
+    })
+    .returning();
+
+  // Copy every block + its items. Map old block IDs → new block IDs so
+  // we can re-attach items to the right cloned block.
+  const sourceBlocks = await db.query.resumeBlocks.findMany({
+    where: eq(resumeBlocks.resumeId, sourceResumeId),
+    orderBy: (b, { asc }) => [asc(b.sortOrder)],
+  });
+
+  for (const sb of sourceBlocks) {
+    const [nb] = await db
+      .insert(resumeBlocks)
+      .values({
+        resumeId: newResume.id,
+        blockType: sb.blockType,
+        headingOverride: sb.headingOverride,
+        sortOrder: sb.sortOrder,
+        isVisible: sb.isVisible,
+        config: sb.config,
+      })
+      .returning();
+
+    const sourceItems = await db.query.resumeBlockItems.findMany({
+      where: eq(resumeBlockItems.blockId, sb.id),
+      orderBy: (i, { asc }) => [asc(i.sortOrder)],
+    });
+    if (sourceItems.length > 0) {
+      await db.insert(resumeBlockItems).values(
+        sourceItems.map((si) => ({
+          blockId: nb.id,
+          sourceType: si.sourceType,
+          sourceId: si.sourceId,
+          sortOrder: si.sortOrder,
+          isVisible: si.isVisible,
+          overrides: si.overrides,
+        })),
+      );
+    }
+  }
+
+  revalidatePath("/resumes");
+  redirect(`/resumes/${newResume.id}/edit`);
+}
+
 export async function deleteResume(resumeId: string) {
   const user = await requireUser();
 

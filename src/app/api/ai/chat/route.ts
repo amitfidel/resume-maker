@@ -1,4 +1,4 @@
-import { generateText, tool, stepCountIs } from "ai";
+import { streamText, tool, stepCountIs } from "ai";
 import { groq } from "@ai-sdk/groq";
 import { z } from "zod";
 import { buildChatAgentPrompt } from "@/lib/ai/prompts/chat-agent";
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   const actions: Array<{ tool: string; description: string }> = [];
 
   try {
-    const result = await generateText({
+    const result = streamText({
       // openai/gpt-oss-120b is much stronger at structured tool calling than
       // llama-3.3-70b-versatile on Groq. Override with GROQ_MODEL if needed.
       model: groq(process.env.GROQ_MODEL || "openai/gpt-oss-120b"),
@@ -478,14 +478,72 @@ export async function POST(req: Request) {
       },
     });
 
-    // Revalidate the editor page so the preview updates
-    if (actions.length > 0) {
-      revalidatePath(`/resumes/${resumeId}/edit`);
-    }
+    // NDJSON streaming protocol — each line is a self-contained JSON event:
+    //   {"type":"text-delta","delta":"hello "}
+    //   {"type":"action","description":"Updated summary"}
+    //   {"type":"done"}
+    // Tools mutate `actions[]` in their execute() callbacks; we watermark
+    // how many we've already emitted so the consumer sees each one in
+    // roughly the order it ran.
+    const encoder = new TextEncoder();
+    let lastEmitted = 0;
 
-    return Response.json({
-      text: result.text,
-      actions,
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        const send = (obj: Record<string, unknown>) => {
+          controller.enqueue(encoder.encode(JSON.stringify(obj) + "\n"));
+        };
+        const flushActions = () => {
+          while (lastEmitted < actions.length) {
+            send({ type: "action", ...actions[lastEmitted] });
+            lastEmitted++;
+          }
+        };
+
+        try {
+          for await (const part of result.fullStream) {
+            if (part.type === "text-delta") {
+              // Flush any tool actions that fired before this text chunk.
+              flushActions();
+              const delta =
+                (part as { text?: string; textDelta?: string }).text ??
+                (part as { textDelta?: string }).textDelta ??
+                "";
+              if (delta) send({ type: "text-delta", delta });
+            } else if (part.type === "tool-result" || part.type === "tool-call") {
+              flushActions();
+            } else if (part.type === "error") {
+              const errPart = part as { error?: unknown };
+              const message =
+                errPart.error instanceof Error
+                  ? errPart.error.message
+                  : String(errPart.error);
+              send({ type: "error", error: message });
+            }
+          }
+          // Final flush in case the model finished with a pure tool call
+          // and emitted no trailing text.
+          flushActions();
+
+          if (actions.length > 0) {
+            revalidatePath(`/resumes/${resumeId}/edit`);
+          }
+          send({ type: "done" });
+        } catch (err) {
+          const e = err as { message?: string };
+          send({ type: "error", error: e.message ?? "Stream error" });
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "application/x-ndjson; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        "X-Accel-Buffering": "no",
+      },
     });
   } catch (error) {
     // Surface Groq's `failed_generation` body so we can see what the model
