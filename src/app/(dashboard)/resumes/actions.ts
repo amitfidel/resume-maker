@@ -15,7 +15,7 @@ import {
   projectBullets,
   certifications,
 } from "@/db/schema";
-import { eq, and, max } from "drizzle-orm";
+import { eq, and, max, ne, gt } from "drizzle-orm";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -987,6 +987,59 @@ type ResumeSnapshot = {
   }>;
 };
 
+/**
+ * Overwrite the live resume rows with a saved snapshot. Shared by
+ * `restoreResumeVersion` (named history) and `restoreUndoCheckpoint`
+ * (the cheap undo stack). Internal helper — not exported as a server
+ * action.
+ */
+async function applySnapshot(
+  resumeId: string,
+  snapshot: ResumeSnapshot,
+): Promise<void> {
+  await db
+    .update(resumes)
+    .set({
+      title: snapshot.title,
+      templateId: snapshot.templateId,
+      headerOverrides: snapshot.headerOverrides,
+      summaryOverride: snapshot.summaryOverride,
+      settings: snapshot.settings,
+      updatedAt: new Date(),
+    })
+    .where(eq(resumes.id, resumeId));
+
+  // Delete all existing blocks (cascades to items)
+  await db.delete(resumeBlocks).where(eq(resumeBlocks.resumeId, resumeId));
+
+  for (const b of snapshot.blocks) {
+    const [newBlock] = await db
+      .insert(resumeBlocks)
+      .values({
+        resumeId,
+        blockType: b.blockType,
+        headingOverride: b.headingOverride,
+        sortOrder: b.sortOrder,
+        isVisible: b.isVisible,
+        config: b.config,
+      })
+      .returning();
+
+    if (b.items.length > 0) {
+      await db.insert(resumeBlockItems).values(
+        b.items.map((i) => ({
+          blockId: newBlock.id,
+          sourceType: i.sourceType,
+          sourceId: i.sourceId,
+          sortOrder: i.sortOrder,
+          isVisible: i.isVisible,
+          overrides: i.overrides,
+        })),
+      );
+    }
+  }
+}
+
 async function buildSnapshot(resumeId: string): Promise<ResumeSnapshot> {
   const resume = await db.query.resumes.findFirst({
     where: eq(resumes.id, resumeId),
@@ -1075,7 +1128,12 @@ export async function getResumeVersions(resumeId: string) {
   if (!resume) return [];
 
   return db.query.resumeVersions.findMany({
-    where: eq(resumeVersions.resumeId, resumeId),
+    where: and(
+      eq(resumeVersions.resumeId, resumeId),
+      // Hide auto-undo snapshots — they're driven by the editor's
+      // implicit undo/redo stack, not the user's named version history.
+      ne(resumeVersions.createdBy, "auto_undo"),
+    ),
     orderBy: (v, { desc }) => [desc(v.versionNumber)],
   });
 }
@@ -1146,50 +1204,7 @@ export async function restoreResumeVersion(
       createdBy: "user",
     });
 
-    const snapshot = version.snapshot as ResumeSnapshot;
-
-    await db
-      .update(resumes)
-      .set({
-        title: snapshot.title,
-        templateId: snapshot.templateId,
-        headerOverrides: snapshot.headerOverrides,
-        summaryOverride: snapshot.summaryOverride,
-        settings: snapshot.settings,
-        updatedAt: new Date(),
-      })
-      .where(eq(resumes.id, resumeId));
-
-    // Delete all existing blocks (cascades to items)
-    await db.delete(resumeBlocks).where(eq(resumeBlocks.resumeId, resumeId));
-
-    // Recreate blocks and items sequentially
-    for (const b of snapshot.blocks) {
-      const [newBlock] = await db
-        .insert(resumeBlocks)
-        .values({
-          resumeId,
-          blockType: b.blockType,
-          headingOverride: b.headingOverride,
-          sortOrder: b.sortOrder,
-          isVisible: b.isVisible,
-          config: b.config,
-        })
-        .returning();
-
-      if (b.items.length > 0) {
-        await db.insert(resumeBlockItems).values(
-          b.items.map((i) => ({
-            blockId: newBlock.id,
-            sourceType: i.sourceType,
-            sourceId: i.sourceId,
-            sortOrder: i.sortOrder,
-            isVisible: i.isVisible,
-            overrides: i.overrides,
-          }))
-        );
-      }
-    }
+    await applySnapshot(resumeId, version.snapshot as ResumeSnapshot);
 
     revalidatePath(`/resumes/${resumeId}/edit`);
     return { success: true };
@@ -1220,4 +1235,159 @@ export async function deleteResumeVersion(resumeId: string, versionId: string) {
     );
 
   revalidatePath(`/resumes/${resumeId}/edit`);
+}
+
+// ============================================================
+// Undo / redo (auto-snapshot stack)
+// ============================================================
+//
+// Cheap undo built on `resume_versions`: every save event triggers a
+// snapshot tagged `createdBy="auto_undo"`. The client tracks a cursor
+// into that stack — undo restores the previous entry, redo the next.
+// `getResumeVersions` filters these out so they don't pollute the
+// named version-history UI.
+
+const UNDO_TAG = "auto_undo";
+
+/**
+ * Snapshot the current resume state as an auto_undo entry. Returns the
+ * created row's metadata. Skips if the latest auto_undo snapshot is
+ * structurally identical to the current state (avoids stack spam from
+ * no-op saves).
+ */
+export async function recordUndoCheckpoint(resumeId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return { error: "Resume not found" };
+
+  const snapshot = await buildSnapshot(resumeId);
+
+  const last = await db.query.resumeVersions.findFirst({
+    where: and(
+      eq(resumeVersions.resumeId, resumeId),
+      eq(resumeVersions.createdBy, UNDO_TAG),
+    ),
+    orderBy: (v, { desc }) => [desc(v.versionNumber)],
+  });
+  if (last && JSON.stringify(last.snapshot) === JSON.stringify(snapshot)) {
+    return { skipped: true as const };
+  }
+
+  const [{ maxVersion }] = await db
+    .select({ maxVersion: max(resumeVersions.versionNumber) })
+    .from(resumeVersions)
+    .where(eq(resumeVersions.resumeId, resumeId));
+
+  const [created] = await db
+    .insert(resumeVersions)
+    .values({
+      resumeId,
+      versionNumber: (maxVersion ?? 0) + 1,
+      snapshot,
+      changeSummary: null,
+      createdBy: UNDO_TAG,
+    })
+    .returning();
+
+  return {
+    id: created.id,
+    versionNumber: created.versionNumber,
+    createdAt: created.createdAt,
+  };
+}
+
+/**
+ * List undo checkpoints (oldest first). Caller maintains a cursor into
+ * the array.
+ */
+export async function getUndoCheckpoints(resumeId: string) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return [];
+
+  const rows = await db.query.resumeVersions.findMany({
+    where: and(
+      eq(resumeVersions.resumeId, resumeId),
+      eq(resumeVersions.createdBy, UNDO_TAG),
+    ),
+    orderBy: (v, { asc }) => [asc(v.versionNumber)],
+  });
+  // Strip snapshot blob from the listing — it's heavy and the client
+  // never needs it; restore happens on the server.
+  return rows.map((r) => ({
+    id: r.id,
+    versionNumber: r.versionNumber,
+    createdAt: r.createdAt,
+  }));
+}
+
+/**
+ * Restore an undo checkpoint without taking a "before" snapshot. The
+ * caller is expected to have already snapshotted whatever they wanted
+ * to keep — for the undo stack the answer is "nothing", because the
+ * cursor moves through existing entries.
+ */
+export async function restoreUndoCheckpoint(
+  resumeId: string,
+  checkpointId: string,
+) {
+  try {
+    const user = await requireUser();
+
+    const resume = await db.query.resumes.findFirst({
+      where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+    });
+    if (!resume) return { error: "Resume not found" };
+
+    const cp = await db.query.resumeVersions.findFirst({
+      where: and(
+        eq(resumeVersions.id, checkpointId),
+        eq(resumeVersions.resumeId, resumeId),
+        eq(resumeVersions.createdBy, UNDO_TAG),
+      ),
+    });
+    if (!cp) return { error: "Checkpoint not found" };
+
+    await applySnapshot(resumeId, cp.snapshot as ResumeSnapshot);
+    revalidatePath(`/resumes/${resumeId}/edit`);
+    return { success: true };
+  } catch (err) {
+    console.error("restoreUndoCheckpoint error:", err);
+    return {
+      error: err instanceof Error ? err.message : "Failed to undo",
+    };
+  }
+}
+
+/**
+ * After the user undoes and then makes a fresh edit, the "redo"
+ * checkpoints past the cursor are no longer reachable in chronological
+ * order and would be confusing if exposed on a refresh. Drop them.
+ */
+export async function discardUndoCheckpointsAfter(
+  resumeId: string,
+  versionNumber: number,
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return;
+
+  await db
+    .delete(resumeVersions)
+    .where(
+      and(
+        eq(resumeVersions.resumeId, resumeId),
+        eq(resumeVersions.createdBy, UNDO_TAG),
+        gt(resumeVersions.versionNumber, versionNumber),
+      ),
+    );
 }

@@ -16,6 +16,7 @@ import { VersionHistory } from "./version-history";
 import { SaveVersionButton } from "./save-version-button";
 import { SaveIndicator } from "./save-indicator";
 import { ShareButton } from "./share-button";
+import { UndoRedoController } from "./undo-redo-controller";
 import { TemplateRenderer } from "@/templates/renderer";
 import { useT, useI18n } from "@/lib/i18n/context";
 import type { ResolvedResume } from "@/lib/resume/types";
@@ -82,6 +83,7 @@ export function EditorShell({ resume }: Props) {
         <div className="flex items-center gap-2">
           {showSidebars && (
             <>
+              <UndoRedoController resumeId={resume.id} />
               <TemplateDialog resumeId={resume.id} currentTemplateId={resume.templateId} />
               <SaveVersionButton resumeId={resume.id} />
               <ShareButton resumeId={resume.id} />
