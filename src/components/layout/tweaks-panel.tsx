@@ -92,6 +92,7 @@ export function TweaksPanel() {
     <>
       {open && (
         <div
+          data-pdf-hide
           className="fixed bottom-20 end-6 z-40 w-[300px] rounded-[22px] bg-[var(--surface-raised)] p-[18px] shadow-[var(--sh-4),0_0_0_1px_var(--border-ghost)]"
           style={{
             transformOrigin: "bottom right",
@@ -177,6 +178,7 @@ export function TweaksPanel() {
       )}
 
       <button
+        data-pdf-hide
         onClick={() => setOpen((v) => !v)}
         className="fixed bottom-6 end-6 z-40 inline-flex items-center gap-2 rounded-full bg-[var(--ink)] px-4 py-2.5 text-[13px] font-medium text-[var(--cream)] shadow-[var(--sh-3)] transition-transform hover:-translate-y-px"
       >

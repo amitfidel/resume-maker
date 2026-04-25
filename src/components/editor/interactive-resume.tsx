@@ -5,7 +5,7 @@ import { EditableText } from "./editable-text";
 import { EditableDateRange } from "./editable-date-range";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useT } from "@/lib/i18n/context";
-import { localizedHeading } from "@/lib/i18n/dictionary";
+import { localizedHeading, notLegacy } from "@/lib/i18n/dictionary";
 import {
   updateSummary as _updateSummary,
   updateBlockHeading as _updateBlockHeading,
@@ -60,26 +60,6 @@ type Props = {
   resume: ResolvedResume;
 };
 
-/**
- * Match legacy seed values written by older versions of addItemToBlock
- * ("Degree", "University", "Job Title", "Company", "Project Name",
- * "New Skill", "Other", "Certification Name") and treat them as empty so
- * the user sees a localized placeholder instead of stale English text.
- */
-const LEGACY_SEEDS = new Set([
-  "Degree",
-  "University",
-  "Job Title",
-  "Company",
-  "Project Name",
-  "New Skill",
-  "Other",
-  "Certification Name",
-]);
-function notLegacy(v: string | null | undefined): string {
-  if (!v) return "";
-  return LEGACY_SEEDS.has(v) ? "" : v;
-}
 
 export function InteractiveResume({ resume }: Props) {
   const style = getStyle(resume.templateId);

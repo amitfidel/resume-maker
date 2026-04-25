@@ -48,6 +48,16 @@ export async function GET(
     const protocol = host.startsWith("localhost") ? "http" : "https";
     const renderUrl = `${protocol}://${host}/resume-render/${id}?locale=${locale}`;
 
+    // Prime the headless browser with the user's UI locale via cookie so
+    // the SSR root layout reads it and seeds I18nProvider correctly. No
+    // nested-provider issue, no client-side flicker.
+    await page.setCookie({
+      name: "resumi-locale",
+      value: locale,
+      domain: host.split(":")[0],
+      path: "/",
+    });
+
     await page.goto(renderUrl, { waitUntil: "networkidle0", timeout: 30000 });
 
     const pdf = await page.pdf({

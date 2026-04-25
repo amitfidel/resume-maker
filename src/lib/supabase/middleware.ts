@@ -34,12 +34,18 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect unauthenticated users to login for protected routes
+  // Redirect unauthenticated users to login for protected routes.
+  // NOTE: `/resume-render/[id]` is intentionally NOT protected — it is
+  // fetched server-to-server by the headless Puppeteer browser used in
+  // PDF export, which has no user cookies. Privacy is preserved by the
+  // unguessable UUID. The list pages (/resumes) + editor (/resumes/...)
+  // remain protected via `/resumes` (with the trailing 's').
+  const path = request.nextUrl.pathname;
   const isProtectedRoute =
-    request.nextUrl.pathname.startsWith("/dashboard") ||
-    request.nextUrl.pathname.startsWith("/resume") ||
-    request.nextUrl.pathname.startsWith("/profile") ||
-    request.nextUrl.pathname.startsWith("/applications");
+    path.startsWith("/dashboard") ||
+    path.startsWith("/resumes") ||
+    path.startsWith("/profile") ||
+    path.startsWith("/applications");
 
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone();

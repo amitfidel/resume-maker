@@ -597,3 +597,25 @@ export function localizedHeading(
   }
   return heading;
 }
+
+/**
+ * Older `addItemToBlock` writes used English seed text ("Degree", "Job
+ * Title", etc.) as placeholder values. They should be displayed as empty
+ * — the canvas swaps in a localized placeholder, the templates render
+ * nothing. Use this everywhere you'd otherwise pipe raw user-editable
+ * fields through to the DOM.
+ */
+const LEGACY_SEEDS = new Set([
+  "Degree",
+  "University",
+  "Job Title",
+  "Company",
+  "Project Name",
+  "New Skill",
+  "Other",
+  "Certification Name",
+]);
+export function notLegacy(v: string | null | undefined): string {
+  if (!v) return "";
+  return LEGACY_SEEDS.has(v) ? "" : v;
+}

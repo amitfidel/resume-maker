@@ -19,7 +19,7 @@ import type { TemplateStyle } from "./styles";
 import { getStyle } from "./styles";
 import { formatDateRange } from "./modern-clean/shared";
 import { useT } from "@/lib/i18n/context";
-import { localizedHeading } from "@/lib/i18n/dictionary";
+import { localizedHeading, notLegacy } from "@/lib/i18n/dictionary";
 
 export function TemplateRenderer({ resume }: { resume: ResolvedResume }) {
   const style = getStyle(resume.templateId);
@@ -329,9 +329,9 @@ function RenderExperience({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
               <div>
                 <span style={{ fontWeight: 600, color: style.primaryColor }}>
-                  {exp.title}
+                  {notLegacy(exp.title)}
                 </span>
-                <span style={{ color: style.mutedColor }}> · {exp.company}</span>
+                <span style={{ color: style.mutedColor }}> · {notLegacy(exp.company)}</span>
                 {exp.location && (
                   <span style={{ color: style.mutedColor, fontSize: "0.85em" }}>
                     {" "}· {exp.location}
@@ -379,10 +379,10 @@ function RenderEducation({
           >
             <div>
               <span style={{ fontWeight: 600, color: style.primaryColor }}>
-                {edu.degree}
+                {notLegacy(edu.degree)}
                 {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
               </span>
-              <span style={{ color: style.mutedColor }}> · {edu.institution}</span>
+              <span style={{ color: style.mutedColor }}> · {notLegacy(edu.institution)}</span>
               {edu.gpa && <span style={{ color: style.mutedColor }}> · GPA: {edu.gpa}</span>}
             </div>
             <span style={{ color: style.mutedColor, fontSize: "0.8rem" }}>
@@ -488,7 +488,7 @@ function RenderProjects({
         return (
           <div key={item.id}>
             <div>
-              <span style={{ fontWeight: 600, color: style.primaryColor }}>{proj.name}</span>
+              <span style={{ fontWeight: 600, color: style.primaryColor }}>{notLegacy(proj.name)}</span>
               {proj.technologies && proj.technologies.length > 0 && (
                 <span style={{ color: style.mutedColor }}>
                   {" "}· {proj.technologies.join(", ")}
@@ -539,7 +539,7 @@ function RenderCerts({
             }}
           >
             <div>
-              <span style={{ fontWeight: 600, color: style.primaryColor }}>{cert.name}</span>
+              <span style={{ fontWeight: 600, color: style.primaryColor }}>{notLegacy(cert.name)}</span>
               {cert.issuer && <span style={{ color: style.mutedColor }}> · {cert.issuer}</span>}
             </div>
             {cert.issueDate && (
@@ -570,7 +570,7 @@ function RenderSidebarCerts({
         const cert = item.data as ResolvedCertification;
         return (
           <div key={item.id} style={{ fontSize: "0.75rem" }}>
-            <div style={{ fontWeight: 600 }}>{cert.name}</div>
+            <div style={{ fontWeight: 600 }}>{notLegacy(cert.name)}</div>
             {cert.issuer && <div style={{ opacity: 0.75 }}>{cert.issuer}</div>}
           </div>
         );

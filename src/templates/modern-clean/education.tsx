@@ -1,5 +1,6 @@
 import type { ResolvedBlock, ResolvedEducation } from "@/lib/resume/types";
 import { SectionWrapper, formatDateRange } from "./shared";
+import { notLegacy } from "@/lib/i18n/dictionary";
 
 export function EducationSection({
   block,
@@ -19,10 +20,10 @@ export function EducationSection({
             <div key={item.id} className="flex items-baseline justify-between">
               <div>
                 <span className="font-semibold text-gray-900">
-                  {edu.degree}
+                  {notLegacy(edu.degree)}
                   {edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}
                 </span>
-                <span className="text-gray-600"> | {edu.institution}</span>
+                <span className="text-gray-600"> | {notLegacy(edu.institution)}</span>
                 {edu.gpa && (
                   <span className="text-gray-400"> | GPA: {edu.gpa}</span>
                 )}

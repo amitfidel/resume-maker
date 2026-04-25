@@ -1,5 +1,6 @@
 import type { ResolvedBlock, ResolvedExperience } from "@/lib/resume/types";
 import { SectionWrapper, formatDateRange } from "./shared";
+import { notLegacy } from "@/lib/i18n/dictionary";
 
 export function ExperienceSection({
   block,
@@ -21,9 +22,9 @@ export function ExperienceSection({
               <div className="flex items-baseline justify-between">
                 <div>
                   <span className="font-semibold text-gray-900">
-                    {exp.title}
+                    {notLegacy(exp.title)}
                   </span>
-                  <span className="text-gray-600"> | {exp.company}</span>
+                  <span className="text-gray-600"> | {notLegacy(exp.company)}</span>
                   {exp.location && (
                     <span className="text-gray-400"> | {exp.location}</span>
                   )}

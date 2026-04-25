@@ -3,6 +3,7 @@ import type {
   ResolvedCertification,
 } from "@/lib/resume/types";
 import { SectionWrapper } from "./shared";
+import { notLegacy } from "@/lib/i18n/dictionary";
 
 export function CertificationsSection({
   block,
@@ -22,7 +23,7 @@ export function CertificationsSection({
             <div key={item.id} className="flex items-baseline justify-between text-sm">
               <div>
                 <span className="font-semibold text-gray-900">
-                  {cert.name}
+                  {notLegacy(cert.name)}
                 </span>
                 {cert.issuer && (
                   <span className="text-gray-600"> | {cert.issuer}</span>

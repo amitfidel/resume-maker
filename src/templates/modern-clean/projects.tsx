@@ -1,5 +1,6 @@
 import type { ResolvedBlock, ResolvedProject } from "@/lib/resume/types";
 import { SectionWrapper } from "./shared";
+import { notLegacy } from "@/lib/i18n/dictionary";
 
 export function ProjectsSection({
   block,
@@ -21,7 +22,7 @@ export function ProjectsSection({
               <div className="flex items-baseline justify-between">
                 <div>
                   <span className="font-semibold text-gray-900">
-                    {proj.name}
+                    {notLegacy(proj.name)}
                   </span>
                   {proj.technologies && proj.technologies.length > 0 && (
                     <span className="text-gray-400">

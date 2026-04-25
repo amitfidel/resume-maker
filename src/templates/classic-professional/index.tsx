@@ -3,7 +3,7 @@
 import type { ResolvedResume, ResolvedBlock, ResolvedExperience, ResolvedEducation, ResolvedSkill, ResolvedProject, ResolvedCertification } from "@/lib/resume/types";
 import { formatDateRange } from "@/templates/modern-clean/shared";
 import { useT } from "@/lib/i18n/context";
-import { localizedHeading } from "@/lib/i18n/dictionary";
+import { localizedHeading, notLegacy } from "@/lib/i18n/dictionary";
 
 type TemplateProps = {
   resume: ResolvedResume;
@@ -79,8 +79,8 @@ function ClassicBlock({ block }: { block: ResolvedBlock }) {
               <div key={item.id}>
                 <div className="flex justify-between">
                   <div>
-                    <span className="font-bold">{exp.title}</span>
-                    <span className="text-gray-600">, {exp.company}</span>
+                    <span className="font-bold">{notLegacy(exp.title)}</span>
+                    <span className="text-gray-600">, {notLegacy(exp.company)}</span>
                     {exp.location && <span className="text-gray-500"> - {exp.location}</span>}
                   </div>
                   <span className="text-sm text-gray-500 italic">
@@ -105,8 +105,8 @@ function ClassicBlock({ block }: { block: ResolvedBlock }) {
             return (
               <div key={item.id} className="flex justify-between">
                 <div>
-                  <span className="font-bold">{edu.degree}{edu.fieldOfStudy && ` in ${edu.fieldOfStudy}`}</span>
-                  <span className="text-gray-600">, {edu.institution}</span>
+                  <span className="font-bold">{notLegacy(edu.degree)}{edu.fieldOfStudy && ` · ${edu.fieldOfStudy}`}</span>
+                  <span className="text-gray-600">, {notLegacy(edu.institution)}</span>
                   {edu.gpa && <span className="text-gray-500"> (GPA: {edu.gpa})</span>}
                 </div>
                 <span className="text-sm text-gray-500 italic">
@@ -145,7 +145,7 @@ function ClassicBlock({ block }: { block: ResolvedBlock }) {
             const bullets = proj.bullets.filter((b) => b.visible);
             return (
               <div key={item.id}>
-                <span className="font-bold">{proj.name}</span>
+                <span className="font-bold">{notLegacy(proj.name)}</span>
                 {proj.technologies && proj.technologies.length > 0 && (
                   <span className="text-gray-500 text-sm"> ({proj.technologies.join(", ")})</span>
                 )}
@@ -168,7 +168,7 @@ function ClassicBlock({ block }: { block: ResolvedBlock }) {
             return (
               <div key={item.id} className="flex justify-between text-sm">
                 <div>
-                  <span className="font-bold">{cert.name}</span>
+                  <span className="font-bold">{notLegacy(cert.name)}</span>
                   {cert.issuer && <span className="text-gray-600">, {cert.issuer}</span>}
                 </div>
                 {cert.issueDate && (

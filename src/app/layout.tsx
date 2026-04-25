@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import { cn } from "@/lib/utils";
 import { TweaksPanel } from "@/components/layout/tweaks-panel";
 import { CommandPalette } from "@/components/layout/command-palette";
 import { ConfirmDialogProvider } from "@/components/ui/confirm-dialog";
 import { I18nProvider } from "@/lib/i18n/context";
+import type { Locale } from "@/lib/i18n/dictionary";
 import "./globals.css";
 
 const geist = Geist({
@@ -30,14 +32,25 @@ export const metadata: Metadata = {
     "Resumi is the editorial AI resume workspace. Compose, tailor, and track polished resumes with a smooth, thoughtful editor.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Server-side locale primer. Read by the PDF flow: the route sets a
+  // `resumi-locale` cookie on the headless browser before navigation, so
+  // the resume-render page hydrates in the right language without any
+  // nested-provider gymnastics. For real user sessions this cookie is
+  // unset and the I18nProvider falls back to localStorage on the client.
+  const cookieStore = await cookies();
+  const cookieLocale = cookieStore.get("resumi-locale")?.value;
+  const initialLocale: Locale | undefined =
+    cookieLocale === "he" || cookieLocale === "en" ? cookieLocale : undefined;
+
   return (
     <html
-      lang="en"
+      lang={initialLocale ?? "en"}
+      dir={initialLocale === "he" ? "rtl" : "ltr"}
       className={cn(geist.variable, instrumentSerif.variable, geistMono.variable)}
       data-accent="indigo"
       data-density="comfortable"
@@ -51,7 +64,7 @@ export default function RootLayout({
         every form control between SSR and hydration). No app-logic effect.
       */}
       <body className="font-body antialiased" suppressHydrationWarning>
-        <I18nProvider>
+        <I18nProvider initialLocale={initialLocale}>
           <ConfirmDialogProvider>
             {children}
             <CommandPalette />
