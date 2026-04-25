@@ -5,6 +5,7 @@ import { buildChatAgentPrompt } from "@/lib/ai/prompts/chat-agent";
 import { resolveResume } from "@/lib/resume/resolve";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/ai/rate-limit";
+import { log } from "@/lib/log";
 import { db } from "@/db";
 import {
   resumes,
@@ -143,7 +144,7 @@ export async function POST(req: Request) {
   try {
     await recordUndoCheckpoint(resumeId);
   } catch (err) {
-    console.warn("pre-AI undo snapshot failed (non-fatal):", err);
+    log.warn("pre_ai_undo_snapshot_failed", { resumeId, err });
   }
 
   // Track tool actions to report back to the UI
@@ -647,17 +648,18 @@ export async function POST(req: Request) {
   } catch (error) {
     // Surface Groq's `failed_generation` body so we can see what the model
     // actually emitted when tool-call JSON breaks.
-    console.error("Chat error:", error);
     const err = error as {
       message?: string;
       responseBody?: string;
       data?: unknown;
       cause?: { message?: string; responseBody?: string };
     };
-    if (err.responseBody) console.error("Groq responseBody:", err.responseBody);
-    if (err.cause?.responseBody)
-      console.error("Groq cause.responseBody:", err.cause.responseBody);
-    if (err.data) console.error("Groq data:", JSON.stringify(err.data, null, 2));
+    log.error("ai_chat_failed", {
+      resumeId,
+      err: error,
+      responseBody: err.responseBody ?? err.cause?.responseBody,
+      data: err.data,
+    });
 
     return Response.json(
       {

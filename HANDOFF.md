@@ -119,3 +119,84 @@ GOOGLE_GENERATIVE_AI_API_KEY         # Gemini
 - Design language is "The Curated Architect" from `stitch_career_flow_workspace.zip`. Key tokens: deep navy `#182034` primary, indigo `#2b0066` tertiary (AI/Magic), Manrope headlines + Inter body. "No-line rule" — sections divided by tonal background shifts, not borders.
 - When adding UI, favor tonal layers and ambient shadows over borders. Magical elements (AI) use the `magical-gradient` or `magical-surface` utility classes.
 - The override model is the heart of the data layer. Anything you add that varies per-resume should live in `resume_block_items.overrides` JSONB, not mutate the profile.
+
+## Production-readiness backlog
+
+The features all work; these are the things that should land before this is more than a beta.
+
+### Row-level security (RLS) — defense in depth
+
+Right now ownership is enforced **only at the application layer**: every server action does
+`db.query.resumes.findFirst({ where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)) })`.
+That's correct as written — but a single forgotten check leaks a row.
+
+Plan when you tackle this:
+
+1. **Enable RLS on every user-data table.** In Supabase SQL editor or via a Drizzle migration:
+   ```sql
+   ALTER TABLE users           ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE career_profiles ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE resumes         ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE resume_blocks       ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE resume_block_items  ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE resume_versions     ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE work_experiences    ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE experience_bullets  ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE education           ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE skills              ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE projects            ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE project_bullets     ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE certifications      ENABLE ROW LEVEL SECURITY;
+   ALTER TABLE applications        ENABLE ROW LEVEL SECURITY;
+   ```
+
+2. **Owner-only policies.** Each policy keys off `auth.uid()`:
+   ```sql
+   CREATE POLICY "owner read"   ON resumes FOR SELECT USING (user_id = auth.uid());
+   CREATE POLICY "owner write"  ON resumes FOR ALL    USING (user_id = auth.uid())
+                                                     WITH CHECK (user_id = auth.uid());
+   ```
+   For child tables, traverse to the owner via a join — e.g. `resume_blocks` policy:
+   ```sql
+   USING (EXISTS (
+     SELECT 1 FROM resumes r WHERE r.id = resume_id AND r.user_id = auth.uid()
+   ))
+   ```
+
+3. **The Drizzle client must use the user's JWT, not the service-role key.** Today
+   `src/db/index.ts` connects with the session-pooler URI which carries no Supabase
+   auth context — RLS policies that reference `auth.uid()` would always see NULL.
+   Two paths:
+   - **Easier:** keep service-role for writes, add an explicit `db` client that uses
+     the user's access token via `postgres-js` + `set local request.jwt.claims = ...`.
+     Server actions that touch user data switch to that client.
+   - **Cleaner:** call Supabase's PostgREST via `@supabase/ssr` for reads (RLS
+     enforced automatically) and keep Drizzle only for migrations + admin tasks.
+
+4. **Public-render carve-out.** `/resume-render/[id]` is intentionally accessible
+   without a session (used by the headless PDF browser and by share links). Either
+   use a separate service-role client for that one route, or add a permissive
+   `SELECT` policy that allows anyone-with-the-UUID to read.
+
+5. **Test coverage.** Once policies are on, write a Vitest integration test that
+   creates two users, logs in as user A, attempts a SELECT/UPDATE on user B's
+   resume — should fail. This is the highest-value test in the suite.
+
+Skipping for now because (a) the app-layer checks are real and consistent, and
+(b) the RLS rollout requires the `auth.uid()`-aware DB client refactor, which
+is its own focused session.
+
+### Other deferred items
+
+- **Sentry/Axiom wiring.** `src/lib/log.ts` is the integration point. Drop in a
+  `Sentry.captureException` call inside `emit()` for `level === "error"` once a
+  DSN is set. Logger calls already use structured event names (`ai_chat_failed`,
+  `restore_resume_version_failed`) so the dashboard won't be a wall of strings.
+- **Snapshot/restore integration test.** Requires a live Postgres for end-to-end
+  coverage of `buildSnapshot → applySnapshot`. Wire it as a Vitest project that
+  runs only when `INTEGRATION_DB_URL` is set, so CI without a DB still passes.
+- **AI chat token accounting.** No usage tracking right now. Groq is free-tier
+  but if/when the model swaps, surface tokens-in / tokens-out in the chat panel
+  and a per-day budget.
+- **PDF export rate limit.** Same `rateLimit` helper, lower bucket — Puppeteer
+  is much heavier than a chat call.

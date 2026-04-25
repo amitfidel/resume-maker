@@ -15,12 +15,13 @@ import {
   projectBullets,
   certifications,
 } from "@/db/schema";
-import { eq, and, max, ne, gt } from "drizzle-orm";
+import { eq, and, max, ne, gt, sql } from "drizzle-orm";
 import { requireUser } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { BlockType, SourceType } from "@/lib/resume/types";
 import { stableStringify } from "@/lib/json/stable";
+import { log } from "@/lib/log";
 
 // Map block types to their source types and default headings
 const BLOCK_SOURCE_MAP: Record<
@@ -990,6 +991,36 @@ export async function deleteBlock(resumeId: string, blockId: string) {
 // Version history
 // ============================================================
 
+/**
+ * Allocate the next `version_number` for a resume atomically. There's
+ * no unique constraint on (resume_id, version_number) in the current
+ * schema, so two concurrent saves could each compute MAX+1 and produce
+ * duplicates — confusing in the UI and makes the undo cursor wobbly.
+ *
+ * Fix without a migration: take a Postgres transaction-level advisory
+ * lock keyed on the resume id before computing MAX. Concurrent calls
+ * for the same resume serialize on the lock; different resumes don't
+ * block each other. Lock auto-releases when the transaction commits.
+ *
+ * The 32-bit hash is "good enough" — collisions only briefly serialize
+ * unrelated resumes, no correctness impact.
+ */
+async function nextVersionNumber(
+  tx: Pick<typeof db, "execute"> & {
+    select: typeof db.select;
+  },
+  resumeId: string,
+): Promise<number> {
+  await tx.execute(
+    sql`SELECT pg_advisory_xact_lock(hashtext(${`resume_versions:${resumeId}`}))`,
+  );
+  const [{ maxVersion }] = await tx
+    .select({ maxVersion: max(resumeVersions.versionNumber) })
+    .from(resumeVersions)
+    .where(eq(resumeVersions.resumeId, resumeId));
+  return (maxVersion ?? 0) + 1;
+}
+
 type ResumeSnapshot = {
   title: string;
   templateId: string;
@@ -1131,23 +1162,21 @@ export async function saveResumeVersion(
 
     const snapshot = await buildSnapshot(resumeId);
 
-    const [{ maxVersion }] = await db
-      .select({ maxVersion: max(resumeVersions.versionNumber) })
-      .from(resumeVersions)
-      .where(eq(resumeVersions.resumeId, resumeId));
-
-    await db.insert(resumeVersions).values({
-      resumeId,
-      versionNumber: (maxVersion ?? 0) + 1,
-      snapshot,
-      changeSummary,
-      createdBy,
+    await db.transaction(async (tx) => {
+      const versionNumber = await nextVersionNumber(tx, resumeId);
+      await tx.insert(resumeVersions).values({
+        resumeId,
+        versionNumber,
+        snapshot,
+        changeSummary,
+        createdBy,
+      });
     });
 
     revalidatePath(`/resumes/${resumeId}/edit`);
     return { success: true };
   } catch (err) {
-    console.error("saveResumeVersion error:", err);
+    log.error("save_resume_version_failed", { resumeId, err });
     return { error: err instanceof Error ? err.message : "Failed to save version" };
   }
 }
@@ -1227,17 +1256,15 @@ export async function restoreResumeVersion(
 
     // Auto-save current state before restoring
     const currentSnapshot = await buildSnapshot(resumeId);
-    const [{ maxVersion }] = await db
-      .select({ maxVersion: max(resumeVersions.versionNumber) })
-      .from(resumeVersions)
-      .where(eq(resumeVersions.resumeId, resumeId));
-
-    await db.insert(resumeVersions).values({
-      resumeId,
-      versionNumber: (maxVersion ?? 0) + 1,
-      snapshot: currentSnapshot,
-      changeSummary: `Auto-saved before restoring v${version.versionNumber}`,
-      createdBy: "user",
+    await db.transaction(async (tx) => {
+      const versionNumber = await nextVersionNumber(tx, resumeId);
+      await tx.insert(resumeVersions).values({
+        resumeId,
+        versionNumber,
+        snapshot: currentSnapshot,
+        changeSummary: `Auto-saved before restoring v${version.versionNumber}`,
+        createdBy: "user",
+      });
     });
 
     await applySnapshot(resumeId, version.snapshot as ResumeSnapshot);
@@ -1245,7 +1272,7 @@ export async function restoreResumeVersion(
     revalidatePath(`/resumes/${resumeId}/edit`);
     return { success: true };
   } catch (err) {
-    console.error("restoreResumeVersion error:", err);
+    log.error("restore_resume_version_failed", { resumeId, versionId, err });
     return { error: err instanceof Error ? err.message : "Failed to restore version" };
   }
 }
@@ -1317,21 +1344,22 @@ export async function recordUndoCheckpoint(resumeId: string) {
     return { skipped: true as const };
   }
 
-  const [{ maxVersion }] = await db
-    .select({ maxVersion: max(resumeVersions.versionNumber) })
-    .from(resumeVersions)
-    .where(eq(resumeVersions.resumeId, resumeId));
-
-  const [created] = await db
-    .insert(resumeVersions)
-    .values({
-      resumeId,
-      versionNumber: (maxVersion ?? 0) + 1,
-      snapshot,
-      changeSummary: null,
-      createdBy: UNDO_TAG,
-    })
-    .returning();
+  // Atomic next-version-number allocation under an advisory lock so
+  // two concurrent saves don't both produce the same version_number.
+  const created = await db.transaction(async (tx) => {
+    const versionNumber = await nextVersionNumber(tx, resumeId);
+    const [row] = await tx
+      .insert(resumeVersions)
+      .values({
+        resumeId,
+        versionNumber,
+        snapshot,
+        changeSummary: null,
+        createdBy: UNDO_TAG,
+      })
+      .returning();
+    return row;
+  });
 
   // Trim oldest auto_undo rows past the cap. Keep the most recent N
   // by versionNumber. Best-effort — failing to trim shouldn't fail
@@ -1354,7 +1382,7 @@ export async function recordUndoCheckpoint(resumeId: string) {
       }
     }
   } catch (err) {
-    console.warn("auto_undo trim failed (non-fatal):", err);
+    log.warn("auto_undo_trim_failed", { resumeId, err });
   }
 
   return {
@@ -1423,7 +1451,7 @@ export async function restoreUndoCheckpoint(
     revalidatePath(`/resumes/${resumeId}/edit`);
     return { success: true };
   } catch (err) {
-    console.error("restoreUndoCheckpoint error:", err);
+    log.error("restore_undo_checkpoint_failed", { resumeId, checkpointId, err });
     return {
       error: err instanceof Error ? err.message : "Failed to undo",
     };

@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { users, careerProfiles } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { log } from "@/lib/log";
 
 async function ensureUserInDb(id: string, email: string, fullName?: string | null) {
   const existing = await db.query.users.findFirst({
@@ -49,7 +50,7 @@ export async function signUp(formData: FormData) {
     try {
       await ensureUserInDb(data.user.id, email, fullName);
     } catch (err) {
-      console.error("Error creating user record:", err);
+      log.error("user_record_create_failed", { userId: data.user.id, err });
       // Don't block signup if DB insert fails on duplicate
     }
   }
