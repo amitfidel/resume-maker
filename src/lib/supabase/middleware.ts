@@ -45,7 +45,12 @@ export async function updateSession(request: NextRequest) {
     path.startsWith("/dashboard") ||
     path.startsWith("/resumes") ||
     path.startsWith("/profile") ||
-    path.startsWith("/applications");
+    path.startsWith("/applications") ||
+    // /account/password etc. are reachable from the password-reset
+    // email link via /auth/callback (which exchanges the code for a
+    // session before redirecting). Anyone without a session has no
+    // business there — kick to login.
+    path.startsWith("/account");
 
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone();

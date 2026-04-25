@@ -19,7 +19,7 @@ export function ShareButton({ resumeId }: { resumeId: string }) {
 
   const handleClick = async () => {
     if (typeof window === "undefined") return;
-    const url = `${window.location.origin}/resume-render/${resumeId}?locale=${locale}`;
+    const url = `${window.location.origin}/resume-render/${resumeId}?locale=${encodeURIComponent(locale)}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

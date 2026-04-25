@@ -118,26 +118,54 @@ export function UndoRedoController({ resumeId }: { resumeId: string }) {
       timer = setTimeout(async () => {
         const cp = checkpointsRef.current;
         const cur = cursorRef.current;
+        const trimmedFuture = cur >= 0 && cur < cp.length - 1;
 
-        // If the user undid and is now editing, drop everything past
-        // the cursor before recording the new state.
-        if (cur >= 0 && cur < cp.length - 1) {
-          const last = cp[cur];
-          await discardUndoCheckpointsAfter(resumeId, last.versionNumber);
+        // Block re-entrant captures while we're talking to the server.
+        // Without this, two saves landing inside the debounce window
+        // could both pass the "discard future" branch and produce
+        // duplicate / orphan checkpoints.
+        busyRef.current = true;
+        try {
+          // If the user undid and is now editing, drop everything past
+          // the cursor before recording the new state.
+          if (trimmedFuture) {
+            const last = cp[cur];
+            await discardUndoCheckpointsAfter(resumeId, last.versionNumber);
+          }
+
+          const created = await recordUndoCheckpoint(resumeId);
+
+          if (!isCreated(created)) {
+            // Server skipped (snapshot identical to last) or errored. If
+            // we just deleted the future entries, our local checkpoint
+            // array now references rows that no longer exist on the
+            // server — re-sync from the source of truth.
+            if (trimmedFuture) {
+              const fresh = await getUndoCheckpoints(resumeId);
+              setCheckpoints(fresh);
+              setCursor(fresh.length - 1);
+            }
+            return;
+          }
+
+          const newCp: Checkpoint = {
+            id: created.id,
+            versionNumber: created.versionNumber,
+            createdAt: created.createdAt,
+          };
+          // Re-read refs in case state shifted while we awaited.
+          const cpNow = checkpointsRef.current;
+          const curNow = cursorRef.current;
+          const trimmed =
+            curNow < cpNow.length - 1 ? cpNow.slice(0, curNow + 1) : cpNow;
+          // Honor the cap: keep only the most recent N entries on the
+          // client too, so the cursor math matches the server.
+          const next = [...trimmed, newCp].slice(-30);
+          setCheckpoints(next);
+          setCursor(next.length - 1);
+        } finally {
+          busyRef.current = false;
         }
-
-        const created = await recordUndoCheckpoint(resumeId);
-        if (!isCreated(created)) return; // skipped (no diff) or error
-
-        const newCp: Checkpoint = {
-          id: created.id,
-          versionNumber: created.versionNumber,
-          createdAt: created.createdAt,
-        };
-        const trimmed = cur < cp.length - 1 ? cp.slice(0, cur + 1) : cp;
-        const next = [...trimmed, newCp];
-        setCheckpoints(next);
-        setCursor(next.length - 1);
       }, 1500);
     };
 

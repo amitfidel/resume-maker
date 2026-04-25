@@ -535,58 +535,68 @@ export async function cloneResume(sourceResumeId: string) {
   });
   if (!source) return;
 
-  // Insert the new resume row
-  const [newResume] = await db
-    .insert(resumes)
-    .values({
-      userId: user.id,
-      title: `${source.title} (copy)`,
-      templateId: source.templateId,
-      status: "draft",
-      summaryOverride: source.summaryOverride,
-    })
-    .returning();
-
-  // Copy every block + its items. Map old block IDs → new block IDs so
-  // we can re-attach items to the right cloned block.
+  // Pre-fetch the source blocks + items outside the transaction so the
+  // tx body is purely writes — keeps it short and avoids holding a
+  // connection while doing user-data joins.
   const sourceBlocks = await db.query.resumeBlocks.findMany({
     where: eq(resumeBlocks.resumeId, sourceResumeId),
     orderBy: (b, { asc }) => [asc(b.sortOrder)],
+    with: {
+      items: {
+        orderBy: (i, { asc }) => [asc(i.sortOrder)],
+      },
+    },
   });
 
-  for (const sb of sourceBlocks) {
-    const [nb] = await db
-      .insert(resumeBlocks)
+  // Insert the new resume row. Carry over header + summary + settings so
+  // the clone visually matches the source on first paint; users can then
+  // diverge by editing.
+  const newResumeId = await db.transaction(async (tx) => {
+    const [newResume] = await tx
+      .insert(resumes)
       .values({
-        resumeId: newResume.id,
-        blockType: sb.blockType,
-        headingOverride: sb.headingOverride,
-        sortOrder: sb.sortOrder,
-        isVisible: sb.isVisible,
-        config: sb.config,
+        userId: user.id,
+        title: `${source.title} (copy)`,
+        templateId: source.templateId,
+        status: "draft",
+        headerOverrides: source.headerOverrides,
+        summaryOverride: source.summaryOverride,
+        settings: source.settings,
       })
       .returning();
 
-    const sourceItems = await db.query.resumeBlockItems.findMany({
-      where: eq(resumeBlockItems.blockId, sb.id),
-      orderBy: (i, { asc }) => [asc(i.sortOrder)],
-    });
-    if (sourceItems.length > 0) {
-      await db.insert(resumeBlockItems).values(
-        sourceItems.map((si) => ({
-          blockId: nb.id,
-          sourceType: si.sourceType,
-          sourceId: si.sourceId,
-          sortOrder: si.sortOrder,
-          isVisible: si.isVisible,
-          overrides: si.overrides,
-        })),
-      );
+    for (const sb of sourceBlocks) {
+      const [nb] = await tx
+        .insert(resumeBlocks)
+        .values({
+          resumeId: newResume.id,
+          blockType: sb.blockType,
+          headingOverride: sb.headingOverride,
+          sortOrder: sb.sortOrder,
+          isVisible: sb.isVisible,
+          config: sb.config,
+        })
+        .returning();
+
+      if (sb.items.length > 0) {
+        await tx.insert(resumeBlockItems).values(
+          sb.items.map((si) => ({
+            blockId: nb.id,
+            sourceType: si.sourceType,
+            sourceId: si.sourceId,
+            sortOrder: si.sortOrder,
+            isVisible: si.isVisible,
+            overrides: si.overrides,
+          })),
+        );
+      }
     }
-  }
+
+    return newResume.id;
+  });
 
   revalidatePath("/resumes");
-  redirect(`/resumes/${newResume.id}/edit`);
+  redirect(`/resumes/${newResumeId}/edit`);
 }
 
 export async function deleteResume(resumeId: string) {
@@ -992,52 +1002,63 @@ type ResumeSnapshot = {
  * `restoreResumeVersion` (named history) and `restoreUndoCheckpoint`
  * (the cheap undo stack). Internal helper — not exported as a server
  * action.
+ *
+ * Wrapped in a transaction: a partial failure during the delete +
+ * insert sequence would otherwise leave the resume empty (data loss).
+ * We also defensively validate the snapshot shape — a corrupt JSONB
+ * blob shouldn't be allowed to wipe blocks before the loop trips.
  */
 async function applySnapshot(
   resumeId: string,
   snapshot: ResumeSnapshot,
 ): Promise<void> {
-  await db
-    .update(resumes)
-    .set({
-      title: snapshot.title,
-      templateId: snapshot.templateId,
-      headerOverrides: snapshot.headerOverrides,
-      summaryOverride: snapshot.summaryOverride,
-      settings: snapshot.settings,
-      updatedAt: new Date(),
-    })
-    .where(eq(resumes.id, resumeId));
-
-  // Delete all existing blocks (cascades to items)
-  await db.delete(resumeBlocks).where(eq(resumeBlocks.resumeId, resumeId));
-
-  for (const b of snapshot.blocks) {
-    const [newBlock] = await db
-      .insert(resumeBlocks)
-      .values({
-        resumeId,
-        blockType: b.blockType,
-        headingOverride: b.headingOverride,
-        sortOrder: b.sortOrder,
-        isVisible: b.isVisible,
-        config: b.config,
-      })
-      .returning();
-
-    if (b.items.length > 0) {
-      await db.insert(resumeBlockItems).values(
-        b.items.map((i) => ({
-          blockId: newBlock.id,
-          sourceType: i.sourceType,
-          sourceId: i.sourceId,
-          sortOrder: i.sortOrder,
-          isVisible: i.isVisible,
-          overrides: i.overrides,
-        })),
-      );
-    }
+  if (!snapshot || !Array.isArray(snapshot.blocks)) {
+    throw new Error("Snapshot is malformed (missing blocks array)");
   }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(resumes)
+      .set({
+        title: snapshot.title,
+        templateId: snapshot.templateId,
+        headerOverrides: snapshot.headerOverrides,
+        summaryOverride: snapshot.summaryOverride,
+        settings: snapshot.settings,
+        updatedAt: new Date(),
+      })
+      .where(eq(resumes.id, resumeId));
+
+    // Delete all existing blocks (cascades to items)
+    await tx.delete(resumeBlocks).where(eq(resumeBlocks.resumeId, resumeId));
+
+    for (const b of snapshot.blocks) {
+      const [newBlock] = await tx
+        .insert(resumeBlocks)
+        .values({
+          resumeId,
+          blockType: b.blockType,
+          headingOverride: b.headingOverride,
+          sortOrder: b.sortOrder,
+          isVisible: b.isVisible,
+          config: b.config,
+        })
+        .returning();
+
+      if (b.items.length > 0) {
+        await tx.insert(resumeBlockItems).values(
+          b.items.map((i) => ({
+            blockId: newBlock.id,
+            sourceType: i.sourceType,
+            sourceId: i.sourceId,
+            sortOrder: i.sortOrder,
+            isVisible: i.isVisible,
+            overrides: i.overrides,
+          })),
+        );
+      }
+    }
+  });
 }
 
 async function buildSnapshot(resumeId: string): Promise<ResumeSnapshot> {
@@ -1248,12 +1269,40 @@ export async function deleteResumeVersion(resumeId: string, versionId: string) {
 // named version-history UI.
 
 const UNDO_TAG = "auto_undo";
+// Cap on auto_undo rows per resume. Each row stores a full JSONB
+// snapshot, so unbounded growth is real DB bloat — a chatty session
+// could rack up hundreds. 30 entries is enough for "I'd like to walk
+// back the last few changes" without keeping the entire edit history.
+const UNDO_HISTORY_LIMIT = 30;
+
+/**
+ * Stable JSON.stringify with sorted object keys. Two structurally
+ * identical objects whose keys were inserted in different orders would
+ * otherwise serialize differently and defeat the dedup check.
+ */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+  if (Array.isArray(value)) {
+    return "[" + value.map(stableStringify).join(",") + "]";
+  }
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj).sort();
+  return (
+    "{" +
+    keys
+      .map((k) => JSON.stringify(k) + ":" + stableStringify(obj[k]))
+      .join(",") +
+    "}"
+  );
+}
 
 /**
  * Snapshot the current resume state as an auto_undo entry. Returns the
  * created row's metadata. Skips if the latest auto_undo snapshot is
  * structurally identical to the current state (avoids stack spam from
- * no-op saves).
+ * no-op saves). Trims older auto_undo rows past UNDO_HISTORY_LIMIT.
  */
 export async function recordUndoCheckpoint(resumeId: string) {
   const user = await requireUser();
@@ -1272,7 +1321,7 @@ export async function recordUndoCheckpoint(resumeId: string) {
     ),
     orderBy: (v, { desc }) => [desc(v.versionNumber)],
   });
-  if (last && JSON.stringify(last.snapshot) === JSON.stringify(snapshot)) {
+  if (last && stableStringify(last.snapshot) === stableStringify(snapshot)) {
     return { skipped: true as const };
   }
 
@@ -1291,6 +1340,30 @@ export async function recordUndoCheckpoint(resumeId: string) {
       createdBy: UNDO_TAG,
     })
     .returning();
+
+  // Trim oldest auto_undo rows past the cap. Keep the most recent N
+  // by versionNumber. Best-effort — failing to trim shouldn't fail
+  // the undo capture.
+  try {
+    const allUndos = await db.query.resumeVersions.findMany({
+      where: and(
+        eq(resumeVersions.resumeId, resumeId),
+        eq(resumeVersions.createdBy, UNDO_TAG),
+      ),
+      orderBy: (v, { desc }) => [desc(v.versionNumber)],
+      columns: { id: true, versionNumber: true },
+    });
+    if (allUndos.length > UNDO_HISTORY_LIMIT) {
+      const toDelete = allUndos.slice(UNDO_HISTORY_LIMIT);
+      for (const row of toDelete) {
+        await db
+          .delete(resumeVersions)
+          .where(eq(resumeVersions.id, row.id));
+      }
+    }
+  } catch (err) {
+    console.warn("auto_undo trim failed (non-fatal):", err);
+  }
 
   return {
     id: created.id,

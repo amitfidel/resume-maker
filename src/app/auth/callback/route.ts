@@ -7,7 +7,18 @@ import { eq } from "drizzle-orm";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  const rawNext = searchParams.get("next") ?? "/dashboard";
+
+  // Open-redirect guard. The `next` param is attacker-controllable
+  // (anyone can craft an auth link). Only allow same-origin paths
+  // starting with a single `/` — reject `//evil.com`, `/\evil.com`,
+  // and protocol-qualified URLs.
+  const isSafePath =
+    rawNext.startsWith("/") &&
+    !rawNext.startsWith("//") &&
+    !rawNext.startsWith("/\\") &&
+    !rawNext.includes(":");
+  const next = isSafePath ? rawNext : "/dashboard";
 
   if (code) {
     const supabase = await createClient();

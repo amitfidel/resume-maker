@@ -22,6 +22,7 @@ import {
   deleteBlock as deleteBlockAction,
   updateItemField as updateItemFieldAction,
   reorderItems as reorderItemsAction,
+  recordUndoCheckpoint,
 } from "@/app/(dashboard)/resumes/actions";
 
 export async function POST(req: Request) {
@@ -49,6 +50,18 @@ export async function POST(req: Request) {
   }
 
   const systemPrompt = buildChatAgentPrompt(resolved);
+
+  // Snapshot the pre-AI state into the undo stack. The dedup inside
+  // recordUndoCheckpoint will no-op when the state already matches the
+  // last auto_undo entry, so this is cheap on follow-up turns. With this
+  // in place, `Cmd+Z` after an AI run takes the user back to "before
+  // the AI touched anything" without any client-side coordination.
+  // Best-effort — a failure here shouldn't block the chat.
+  try {
+    await recordUndoCheckpoint(resumeId);
+  } catch (err) {
+    console.warn("pre-AI undo snapshot failed (non-fatal):", err);
+  }
 
   // Track tool actions to report back to the UI
   const actions: Array<{ tool: string; description: string }> = [];
@@ -510,8 +523,27 @@ export async function POST(req: Request) {
                 (part as { textDelta?: string }).textDelta ??
                 "";
               if (delta) send({ type: "text-delta", delta });
-            } else if (part.type === "tool-result" || part.type === "tool-call") {
+            } else if (
+              part.type === "tool-result" ||
+              part.type === "tool-call"
+            ) {
               flushActions();
+            } else if (part.type === "tool-error") {
+              // A tool's execute() threw — surface it so the user sees
+              // something happened. Without this the model sees a void
+              // response, the loop continues, and the action silently
+              // never lands.
+              flushActions();
+              const errPart = part as { toolName?: string; error?: unknown };
+              const message =
+                errPart.error instanceof Error
+                  ? errPart.error.message
+                  : String(errPart.error);
+              send({
+                type: "action",
+                tool: errPart.toolName ?? "tool",
+                description: `${errPart.toolName ?? "Tool"} failed: ${message}`,
+              });
             } else if (part.type === "error") {
               const errPart = part as { error?: unknown };
               const message =

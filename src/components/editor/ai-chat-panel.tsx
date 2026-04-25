@@ -218,6 +218,11 @@ export function AiChatPanel({ resumeId, onClose }: Props) {
 
           if (actionCount > 0) {
             router.refresh();
+            // Tell the undo controller "the state changed". Server
+            // actions invoked from this stream don't pass through the
+            // trackSave wrapper that normally fires this event, so the
+            // post-AI state would otherwise miss the undo stack.
+            window.dispatchEvent(new CustomEvent("resumi:save-end"));
           }
         }
       } catch (err) {
