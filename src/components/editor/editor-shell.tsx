@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Sparkles, Target, MessageCircle } from "lucide-react";
+import { ArrowLeft, Sparkles, Target, MessageCircle } from "lucide-react";
 import { ContentEditor } from "./content-editor";
 import { TemplateDialog } from "./template-dialog";
 import { ResumePreview } from "./resume-preview";
@@ -17,12 +17,14 @@ import { SaveVersionButton } from "./save-version-button";
 import { SaveIndicator } from "./save-indicator";
 import { ShareButton } from "./share-button";
 import { UndoRedoController } from "./undo-redo-controller";
+import { ExportMenu } from "./export-menu";
+import { CoverLetterView } from "./cover-letter-view";
 import { TemplateRenderer } from "@/templates/renderer";
-import { useT, useI18n } from "@/lib/i18n/context";
+import { useT } from "@/lib/i18n/context";
 import type { ResolvedResume } from "@/lib/resume/types";
 
 type RightPanel = "none" | "ai-review" | "job-tailor" | "ai-chat";
-type ViewTab = "editor" | "preview" | "history";
+type ViewTab = "editor" | "preview" | "history" | "cover-letter";
 
 type Props = {
   resume: ResolvedResume;
@@ -36,7 +38,6 @@ export function EditorShell({ resume }: Props) {
   const [mobileView, setMobileView] = useState<"content" | "canvas">("content");
   const router = useRouter();
   const t = useT();
-  const { locale } = useI18n();
 
   const togglePanel = (panel: RightPanel) => {
     setRightPanel((prev) => (prev === panel ? "none" : panel));
@@ -65,7 +66,7 @@ export function EditorShell({ resume }: Props) {
           </h1>
           <SaveIndicator />
           <div className="ms-2 inline-flex rounded-full bg-[var(--surface-sunk)] p-[3px]">
-            {(["editor", "preview", "history"] as const).map((tab) => (
+            {(["editor", "preview", "cover-letter", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -126,15 +127,7 @@ export function EditorShell({ resume }: Props) {
               </Button>
             </>
           )}
-          <a href={`/api/pdf/${resume.id}?locale=${locale}`} download>
-            <Button
-              size="sm"
-              className="magic-shine h-9 gap-2 rounded-full bg-[var(--ink)] px-4 text-[var(--cream)] hover:-translate-y-px hover:bg-[var(--ink)]"
-            >
-              {t("common.export")}
-              <Download className="h-3.5 w-3.5" />
-            </Button>
-          </a>
+          <ExportMenu resumeId={resume.id} />
         </div>
       </div>
 
@@ -223,6 +216,12 @@ export function EditorShell({ resume }: Props) {
                 router.refresh();
               }}
             />
+          </main>
+        )}
+
+        {activeTab === "cover-letter" && (
+          <main className="flex-1 overflow-y-auto bg-[var(--surface-container)]">
+            <CoverLetterView resumeId={resume.id} />
           </main>
         )}
       </div>

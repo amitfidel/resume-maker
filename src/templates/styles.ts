@@ -287,12 +287,71 @@ export const COMPACT: TemplateStyle = {
   sectionSpacing: "0.875rem",
 };
 
+/**
+ * ATS-safe template. The "boring on purpose" choice — Arial 11pt,
+ * single column, no tables, no fancy unicode bullets, no horizontal
+ * rules in the header. Built for resume parsers (Workday, Greenhouse,
+ * Taleo, iCIMS) that choke on multi-column layouts and decorative
+ * glyphs. If a user is being told "your resume isn't getting through
+ * the ATS", this is the template to ship them to.
+ */
+export const ATS_CLEAN: TemplateStyle = {
+  id: "ats-clean",
+  name: "ATS Clean",
+  description:
+    "Single column, single font, parser-safe. Use when the job site rejects your other resumes.",
+
+  fontFamily: "'Arial', 'Helvetica', sans-serif",
+  headingFont: "'Arial', 'Helvetica', sans-serif",
+  baseFontSize: "11pt",
+  lineHeight: "1.4",
+
+  header: {
+    align: "left",
+    style: "plain",
+    nameSize: "1.5rem",
+    nameWeight: "700",
+    nameColor: "#000000",
+    contactStyle: "inline",
+  },
+  nameTracking: "0",
+
+  sectionHeading: {
+    case: "upper",
+    size: "0.85rem",
+    weight: "700",
+    color: "#000000",
+    // No bottom border — some ATSes parse the rule as a section break
+    // and lose the heading. Spacing alone separates sections.
+    tracking: "0.05em",
+    border: "none",
+    marginBottom: "0.4rem",
+  },
+
+  primaryColor: "#000000",
+  accentColor: "#000000",
+  textColor: "#000000",
+  mutedColor: "#333333",
+  dividerColor: "#cccccc",
+  accentBarColor: "#000000",
+
+  layout: "single",
+  padding: "1rem 1.25rem",
+
+  // Hyphen-style bullets. "•" is fine for most ATSes but "-" is the
+  // safest choice; some legacy parsers strip it but read it as text.
+  bulletStyle: "dash",
+  itemSpacing: "0.6rem",
+  sectionSpacing: "1rem",
+};
+
 export const ALL_STYLES: TemplateStyle[] = [
   MODERN_CLEAN,
   EXECUTIVE,
   ACCENT_MODERN,
   TWO_COLUMN,
   COMPACT,
+  ATS_CLEAN,
 ];
 
 export function getStyle(id: string): TemplateStyle {

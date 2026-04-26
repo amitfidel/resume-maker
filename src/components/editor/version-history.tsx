@@ -19,7 +19,9 @@ import {
   User,
   Sparkles,
   Loader2,
+  GitCompare,
 } from "lucide-react";
+import { VersionDiff } from "./version-diff";
 import {
   getResumeVersions,
   restoreResumeVersion,
@@ -40,6 +42,7 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
   const [previewVersion, setPreviewVersion] = useState<ResumeVersion | null>(null);
   const [resolvedPreview, setResolvedPreview] = useState<ResolvedResume | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [diffVersion, setDiffVersion] = useState<ResumeVersion | null>(null);
   const [isPending, startTransition] = useTransition();
   const confirm = useConfirm();
   const t = useT();
@@ -157,12 +160,52 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
             key={v.id}
             version={v}
             onPreview={() => setPreviewVersion(v)}
+            onCompare={() => setDiffVersion(v)}
             onRestore={() => handleRestore(v.id, v.versionNumber)}
             onDelete={() => handleDelete(v.id, v.versionNumber)}
             isPending={isPending}
           />
         ))}
       </div>
+
+      {/* Compare dialog */}
+      <Dialog
+        open={!!diffVersion}
+        onOpenChange={(open) => !open && setDiffVersion(null)}
+      >
+        <DialogContent className="sm:!max-w-[760px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-headline">
+              {t("diff.dialog.title")}
+            </DialogTitle>
+          </DialogHeader>
+          {diffVersion && (
+            <VersionDiff
+              resumeId={resumeId}
+              versionId={diffVersion.id}
+              versionNumber={diffVersion.versionNumber}
+            />
+          )}
+          {diffVersion && (
+            <div className="flex gap-2 border-t border-ghost pt-4">
+              <Button
+                onClick={() => {
+                  handleRestore(diffVersion.id, diffVersion.versionNumber);
+                  setDiffVersion(null);
+                }}
+                className="magical-gradient text-white"
+                disabled={isPending}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                {t("history.restore")}
+              </Button>
+              <Button variant="outline" onClick={() => setDiffVersion(null)}>
+                {t("diff.dialog.close")}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Version preview dialog - renders the actual resume */}
       <Dialog
@@ -241,12 +284,14 @@ export function VersionHistory({ resumeId, onRestoreComplete }: Props) {
 function VersionCard({
   version,
   onPreview,
+  onCompare,
   onRestore,
   onDelete,
   isPending,
 }: {
   version: ResumeVersion;
   onPreview: () => void;
+  onCompare: () => void;
   onRestore: () => void;
   onDelete: () => void;
   isPending: boolean;
@@ -302,6 +347,16 @@ function VersionCard({
             >
               <Eye className="h-3 w-3" />
               {t("history.preview")}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCompare}
+              className="h-7 text-xs gap-1 text-[var(--magic-1)] hover:text-[var(--magic-1)]"
+              disabled={isPending}
+            >
+              <GitCompare className="h-3 w-3" />
+              {t("history.compare")}
             </Button>
             <Button
               variant="ghost"

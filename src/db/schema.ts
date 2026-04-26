@@ -531,6 +531,54 @@ export const aiInteractionsRelations = relations(
 );
 
 // ============================================================
+// Cover Letters (per-resume, per-job)
+// ============================================================
+//
+// A user starts with a base resume, then writes a cover letter against
+// a specific job description. The CL belongs to the resume so it
+// shares ownership/privacy and can be exported alongside.
+
+export const coverLetters = pgTable("cover_letters", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  resumeId: uuid("resume_id")
+    .notNull()
+    .references(() => resumes.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  // Free-text label so users can keep multiple letters per resume
+  // (e.g., "Acme Senior Eng", "Pied Piper Staff Eng").
+  title: text("title").notNull().default("Cover Letter"),
+  // The body, plain text with paragraph breaks. Rendered in a single
+  // serif column for the PDF/DOCX exports.
+  body: text("body").notNull().default(""),
+  // The job description the letter was written against — kept so a
+  // user can re-tailor later, and so the AI sees the source-of-truth
+  // when asked to rewrite.
+  jobDescription: text("job_description"),
+  recipientName: text("recipient_name"), // "Hiring Manager" or "Ada Lovelace"
+  recipientCompany: text("recipient_company"),
+  status: text("status").notNull().default("draft"), // draft | final
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const coverLettersRelations = relations(coverLetters, ({ one }) => ({
+  resume: one(resumes, {
+    fields: [coverLetters.resumeId],
+    references: [resumes.id],
+  }),
+  user: one(users, {
+    fields: [coverLetters.userId],
+    references: [users.id],
+  }),
+}));
+
+// ============================================================
 // Type exports for use in application code
 // ============================================================
 
@@ -573,6 +621,9 @@ export type NewResumeBlockItem = typeof resumeBlockItems.$inferInsert;
 export type ResumeVersion = typeof resumeVersions.$inferSelect;
 
 export type Template = typeof templates.$inferSelect;
+
+export type CoverLetter = typeof coverLetters.$inferSelect;
+export type NewCoverLetter = typeof coverLetters.$inferInsert;
 
 export type JobApplication = typeof jobApplications.$inferSelect;
 export type NewJobApplication = typeof jobApplications.$inferInsert;

@@ -1230,6 +1230,60 @@ export async function getResolvedVersion(
 }
 
 /**
+ * Compute a structural diff between two resume snapshots. The "left"
+ * version is always identified by `versionId`; the "right" is either
+ * another `compareWithId` snapshot, or the live resume state if
+ * compareWithId is null/missing. Designed to power the version-history
+ * "compare" UI.
+ */
+export async function getVersionDiff(
+  resumeId: string,
+  versionId: string,
+  compareWithId: string | null,
+) {
+  const user = await requireUser();
+
+  const resume = await db.query.resumes.findFirst({
+    where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+  });
+  if (!resume) return null;
+
+  const left = await db.query.resumeVersions.findFirst({
+    where: and(
+      eq(resumeVersions.id, versionId),
+      eq(resumeVersions.resumeId, resumeId),
+    ),
+  });
+  if (!left) return null;
+
+  let right: ResumeSnapshot;
+  let rightLabel: string;
+  if (compareWithId) {
+    const r = await db.query.resumeVersions.findFirst({
+      where: and(
+        eq(resumeVersions.id, compareWithId),
+        eq(resumeVersions.resumeId, resumeId),
+      ),
+    });
+    if (!r) return null;
+    right = r.snapshot as ResumeSnapshot;
+    rightLabel = `v${r.versionNumber}`;
+  } else {
+    right = await buildSnapshot(resumeId);
+    rightLabel = "current";
+  }
+
+  const { diffSnapshots } = await import("@/lib/resume/diff");
+  return {
+    leftLabel: `v${left.versionNumber}`,
+    rightLabel,
+    leftCreatedAt: left.createdAt,
+    leftSummary: left.changeSummary,
+    diff: diffSnapshots(left.snapshot as ResumeSnapshot, right),
+  };
+}
+
+/**
  * Restore a resume to a previous version.
  * Wipes current blocks/items and recreates from the snapshot.
  * Creates a new version snapshot of the current state before restoring (auto-save).
