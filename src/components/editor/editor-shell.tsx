@@ -50,9 +50,9 @@ export function EditorShell({ resume }: Props) {
     <ResumeStateProvider initialResume={resume}>
     <div className="flex h-[calc(100vh-0px)] flex-col bg-[var(--surface)]">
       {/* Editor toolbar - glass effect */}
-      <div className="glass-effect sticky top-0 z-10 flex h-14 items-center justify-between border-b border-[var(--border-ghost)] px-5">
-        <div className="flex min-w-0 items-center gap-3.5">
-          <Link href="/resumes">
+      <div className="glass-effect sticky top-0 z-10 flex h-14 items-center justify-between gap-3 border-b border-[var(--border-ghost)] px-4">
+        <div className="flex min-w-0 flex-1 items-center gap-2.5">
+          <Link href="/resumes" className="shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -61,16 +61,18 @@ export function EditorShell({ resume }: Props) {
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <h1 className="font-headline rounded-md px-2 py-1 text-[18px] tracking-[-0.01em] text-[var(--on-surface)] transition-colors hover:bg-[var(--surface-sunk)]">
+          <h1 className="font-headline min-w-0 truncate rounded-md px-2 py-1 text-[18px] tracking-[-0.01em] text-[var(--on-surface)] transition-colors hover:bg-[var(--surface-sunk)]">
             {resume.title === "Untitled Resume" ? t("editor.untitled") : resume.title}
           </h1>
-          <SaveIndicator />
-          <div className="ms-2 inline-flex rounded-full bg-[var(--surface-sunk)] p-[3px]">
+          <div className="hidden sm:block">
+            <SaveIndicator />
+          </div>
+          <div className="ms-2 inline-flex shrink-0 rounded-full bg-[var(--surface-sunk)] p-[3px]">
             {(["editor", "preview", "cover-letter", "history"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`rounded-full px-4 py-1.5 text-[13px] font-medium transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] ${
+                className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-all duration-[var(--t-mid)] ease-[var(--ease-out)] ${
                   activeTab === tab
                     ? "bg-[var(--surface-raised)] text-[var(--on-surface)] shadow-[var(--sh-1)]"
                     : "text-[var(--on-surface-muted)] hover:text-[var(--on-surface-soft)]"
@@ -81,28 +83,34 @@ export function EditorShell({ resume }: Props) {
             ))}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           {showSidebars && (
             <>
               <UndoRedoController resumeId={resume.id} />
-              <TemplateDialog resumeId={resume.id} currentTemplateId={resume.templateId} />
-              <SaveVersionButton resumeId={resume.id} />
-              <ShareButton resumeId={resume.id} />
+              <div className="hidden md:contents">
+                <TemplateDialog resumeId={resume.id} currentTemplateId={resume.templateId} />
+                <SaveVersionButton resumeId={resume.id} />
+                <ShareButton resumeId={resume.id} />
+              </div>
               <Button
                 size="sm"
                 onClick={() => togglePanel("ai-chat")}
+                title={t("editor.ai_chat")}
+                aria-label={t("editor.ai_chat")}
                 className={rightPanel === "ai-chat"
                   ? "magical-surface gap-2 rounded-full"
                   : "magical-gradient magic-shine gap-2 rounded-full"
                 }
               >
                 <MessageCircle className="h-4 w-4" />
-                {t("editor.ai_chat")}
+                <span className="hidden xl:inline">{t("editor.ai_chat")}</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => togglePanel("job-tailor")}
+                title={t("editor.tailor")}
+                aria-label={t("editor.tailor")}
                 className={
                   rightPanel === "job-tailor"
                     ? "magical-gradient gap-2 rounded-full"
@@ -110,12 +118,14 @@ export function EditorShell({ resume }: Props) {
                 }
               >
                 <Target className="h-3.5 w-3.5" />
-                {t("editor.tailor")}
+                <span className="hidden xl:inline">{t("editor.tailor")}</span>
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => togglePanel("ai-review")}
+                title={t("editor.review")}
+                aria-label={t("editor.review")}
                 className={
                   rightPanel === "ai-review"
                     ? "magical-gradient gap-2 rounded-full"
@@ -123,7 +133,7 @@ export function EditorShell({ resume }: Props) {
                 }
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                {t("editor.review")}
+                <span className="hidden xl:inline">{t("editor.review")}</span>
               </Button>
             </>
           )}
