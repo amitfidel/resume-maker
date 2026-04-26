@@ -6,18 +6,16 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Sparkles, Target, MessageCircle } from "lucide-react";
 import { ContentEditor } from "./content-editor";
-import { TemplateDialog } from "./template-dialog";
 import { ResumePreview } from "./resume-preview";
 import { ResumeStateProvider } from "./resume-state";
 import { AiReviewPanel } from "./ai-review-panel";
 import { JobTailorPanel } from "./job-tailor-panel";
 import { AiChatPanel } from "./ai-chat-panel";
 import { VersionHistory } from "./version-history";
-import { SaveVersionButton } from "./save-version-button";
 import { SaveIndicator } from "./save-indicator";
-import { ShareButton } from "./share-button";
 import { UndoRedoController } from "./undo-redo-controller";
 import { ExportMenu } from "./export-menu";
+import { EditorActionsMenu } from "./editor-actions-menu";
 import { CoverLetterView } from "./cover-letter-view";
 import { TemplateRenderer } from "@/templates/renderer";
 import { useT } from "@/lib/i18n/context";
@@ -87,11 +85,6 @@ export function EditorShell({ resume }: Props) {
           {showSidebars && (
             <>
               <UndoRedoController resumeId={resume.id} />
-              <div className="hidden md:contents">
-                <TemplateDialog resumeId={resume.id} currentTemplateId={resume.templateId} />
-                <SaveVersionButton resumeId={resume.id} />
-                <ShareButton resumeId={resume.id} />
-              </div>
               <Button
                 size="sm"
                 onClick={() => togglePanel("ai-chat")}
@@ -103,38 +96,40 @@ export function EditorShell({ resume }: Props) {
                 }
               >
                 <MessageCircle className="h-4 w-4" />
-                <span className="hidden xl:inline">{t("editor.ai_chat")}</span>
+                <span className="hidden lg:inline">{t("editor.ai_chat")}</span>
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => togglePanel("job-tailor")}
                 title={t("editor.tailor")}
                 aria-label={t("editor.tailor")}
                 className={
                   rightPanel === "job-tailor"
-                    ? "magical-gradient gap-2 rounded-full"
-                    : "h-9 gap-1.5 rounded-full text-[13px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+                    ? "magical-gradient h-9 w-9 rounded-full"
+                    : "h-9 w-9 rounded-[10px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
                 }
               >
                 <Target className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline">{t("editor.tailor")}</span>
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => togglePanel("ai-review")}
                 title={t("editor.review")}
                 aria-label={t("editor.review")}
                 className={
                   rightPanel === "ai-review"
-                    ? "magical-gradient gap-2 rounded-full"
-                    : "h-9 gap-1.5 rounded-full text-[13px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
+                    ? "magical-gradient h-9 w-9 rounded-full"
+                    : "h-9 w-9 rounded-[10px] text-[var(--on-surface-soft)] hover:bg-[var(--surface-sunk)] hover:text-[var(--on-surface)]"
                 }
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline">{t("editor.review")}</span>
               </Button>
+              <EditorActionsMenu
+                resumeId={resume.id}
+                currentTemplateId={resume.templateId}
+              />
             </>
           )}
           <ExportMenu resumeId={resume.id} />

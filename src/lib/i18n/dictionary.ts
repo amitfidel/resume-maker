@@ -174,6 +174,7 @@ const en: Dict = {
   "editor.save_version": "Save Version",
   "editor.undo": "Undo (Ctrl+Z)",
   "editor.redo": "Redo (Ctrl+Shift+Z)",
+  "editor.more": "More actions",
   "editor.save_version.dialog_title": "Save a Version",
   "editor.save_version.dialog_desc":
     "Create a snapshot you can return to later. Good for checkpointing before big changes.",
@@ -713,6 +714,7 @@ const he: Dict = {
   "editor.save_version": "שמור גרסה",
   "editor.undo": "ביטול (Ctrl+Z)",
   "editor.redo": "ביצוע מחדש (Ctrl+Shift+Z)",
+  "editor.more": "פעולות נוספות",
   "editor.save_version.dialog_title": "שמירת גרסה",
   "editor.save_version.dialog_desc":
     "צילום מצב שתוכל לחזור אליו אחר כך. שימושי לפני שינויים גדולים.",
