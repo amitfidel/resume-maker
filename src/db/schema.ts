@@ -93,6 +93,12 @@ export const workExperiences = pgTable("work_experiences", {
   endDate: date("end_date"),
   isCurrent: boolean("is_current").notNull().default(false),
   description: text("description"),
+  // 'work' | 'volunteer' | 'military'. Used to render distinct sections
+  // on the profile page and in resume blocks. We keep all three in the
+  // same table because they share an identical shape (title/company/
+  // dates/bullets) — the only difference is which heading they sit
+  // under. A separate column avoids three near-duplicate tables.
+  category: text("category").notNull().default("work"),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()

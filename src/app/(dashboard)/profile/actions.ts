@@ -191,6 +191,14 @@ export async function createWorkExperience(formData: FormData) {
   });
   if (!profile) return { error: "Profile not found" };
 
+  // Validate category — anything else falls back to "work" so a stray
+  // form value can't sneak a bogus value past the schema's text type.
+  const rawCategory = formData.get("category") as string | null;
+  const category =
+    rawCategory === "military" || rawCategory === "volunteer"
+      ? rawCategory
+      : "work";
+
   const [exp] = await db
     .insert(workExperiences)
     .values({
@@ -202,6 +210,7 @@ export async function createWorkExperience(formData: FormData) {
       endDate: (formData.get("endDate") as string) || null,
       isCurrent: formData.get("isCurrent") === "true",
       description: (formData.get("description") as string) || null,
+      category,
     })
     .returning();
 

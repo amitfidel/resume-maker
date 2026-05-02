@@ -33,6 +33,7 @@ type ParsedResume = {
     endDate: string | null;
     isCurrent: boolean;
     bullets: string[];
+    category?: "work" | "military" | "volunteer";
   }>;
   education: Array<{
     institution: string;
@@ -102,6 +103,7 @@ export async function saveImportedProfile(data: ParsedResume) {
         startDate: exp.startDate ?? "2020-01-01",
         endDate: exp.endDate,
         isCurrent: exp.isCurrent,
+        category: exp.category ?? "work",
         sortOrder: i,
       })
       .returning();

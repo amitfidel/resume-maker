@@ -24,6 +24,7 @@ type ParsedData = {
     endDate: string | null;
     isCurrent: boolean;
     bullets: string[];
+    category?: "work" | "military" | "volunteer";
   }>;
   education: Array<{
     institution: string;
@@ -241,6 +242,7 @@ export default function ImportPage() {
                 <ParsedField label={t("import.parsed.name")} value={parsed.fullName} />
                 <ParsedField label={t("import.parsed.headline")} value={parsed.headline} />
                 <ParsedField label={t("import.parsed.email")} value={parsed.email} />
+                <ParsedField label="Phone" value={parsed.phone} />
                 <ParsedField label={t("import.parsed.location")} value={parsed.location} />
               </div>
 
@@ -250,13 +252,7 @@ export default function ImportPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
                   {t("import.parsed.experience")} ({parsed.workExperiences.length})
                 </p>
-                <div className="mt-1.5 space-y-0.5">
-                  {parsed.workExperiences.map((exp, i) => (
-                    <p key={i} className="text-sm text-[var(--on-surface-soft)]">
-                      {exp.title} <span className="text-[var(--on-surface-muted)]">· {exp.company}</span>
-                    </p>
-                  ))}
-                </div>
+                <ExperienceGrouped experiences={parsed.workExperiences} />
               </div>
 
               <div>
@@ -266,7 +262,11 @@ export default function ImportPage() {
                 <div className="mt-1.5 space-y-0.5">
                   {parsed.education.map((edu, i) => (
                     <p key={i} className="text-sm text-[var(--on-surface-soft)]">
-                      {edu.degree} <span className="text-[var(--on-surface-muted)]">— {edu.institution}</span>
+                      {edu.degree}
+                      {edu.fieldOfStudy ? `, ${edu.fieldOfStudy}` : ""}{" "}
+                      <span className="text-[var(--on-surface-muted)]">
+                        — {edu.institution}
+                      </span>
                     </p>
                   ))}
                 </div>
@@ -276,10 +276,50 @@ export default function ImportPage() {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
                   {t("import.parsed.skills")} ({parsed.skills.length})
                 </p>
-                <p className="mt-1.5 text-sm text-[var(--on-surface-soft)]">
-                  {parsed.skills.map((s) => s.name).join(" · ") || "—"}
-                </p>
+                <SkillsByCategory skills={parsed.skills} />
               </div>
+
+              {parsed.projects.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+                    Projects ({parsed.projects.length})
+                  </p>
+                  <div className="mt-1.5 space-y-0.5">
+                    {parsed.projects.map((p, i) => (
+                      <p
+                        key={i}
+                        className="text-sm text-[var(--on-surface-soft)]"
+                      >
+                        {p.name}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {parsed.certifications.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--on-surface-muted)]">
+                    Certifications ({parsed.certifications.length})
+                  </p>
+                  <div className="mt-1.5 space-y-0.5">
+                    {parsed.certifications.map((c, i) => (
+                      <p
+                        key={i}
+                        className="text-sm text-[var(--on-surface-soft)]"
+                      >
+                        {c.name}
+                        {c.issuer ? (
+                          <span className="text-[var(--on-surface-muted)]">
+                            {" "}
+                            — {c.issuer}
+                          </span>
+                        ) : null}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -329,6 +369,153 @@ function ParsedField({ label, value }: { label: string; value: string | null }) 
         {label}
       </p>
       <p className="mt-1 text-sm text-[var(--on-surface)]">{value || "—"}</p>
+    </div>
+  );
+}
+
+function ExperienceGrouped({
+  experiences,
+}: {
+  experiences: Array<{
+    company: string;
+    title: string;
+    location: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    isCurrent: boolean;
+    bullets: string[];
+    category?: "work" | "military" | "volunteer";
+  }>;
+}) {
+  if (experiences.length === 0) {
+    return (
+      <p className="mt-1.5 text-sm text-[var(--on-surface-muted)]">—</p>
+    );
+  }
+
+  // Use the model's category. Parser falls back to "work" if it
+  // couldn't tell — anything explicit (military/volunteer) wins.
+  const labelOf = (cat: string): "Work" | "Military" | "Volunteering" => {
+    if (cat === "military") return "Military";
+    if (cat === "volunteer") return "Volunteering";
+    return "Work";
+  };
+
+  const groups = new Map<
+    "Work" | "Military" | "Volunteering",
+    typeof experiences
+  >();
+  for (const e of experiences) {
+    const k = labelOf(e.category ?? "work");
+    const list = (groups.get(k) ?? []) as typeof experiences;
+    list.push(e);
+    groups.set(k, list);
+  }
+
+  // Stable visible order: Work first, then Military, then Volunteering.
+  const order: Array<"Work" | "Military" | "Volunteering"> = [
+    "Work",
+    "Military",
+    "Volunteering",
+  ];
+
+  return (
+    <div className="mt-1.5 space-y-3">
+      {order.map((cat) => {
+        const list = groups.get(cat);
+        if (!list || list.length === 0) return null;
+        return (
+          <div key={cat}>
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--on-surface-muted)]">
+              {cat} ({list.length})
+            </p>
+            <div className="space-y-2">
+              {list.map((exp, i) => (
+                <div
+                  key={i}
+                  className="rounded-[10px] bg-[var(--surface-sunk)]/50 px-3 py-2"
+                >
+                  <p className="text-sm text-[var(--on-surface-soft)]">
+                    {exp.title}{" "}
+                    <span className="text-[var(--on-surface-muted)]">
+                      · {exp.company}
+                    </span>
+                  </p>
+                  {(exp.startDate || exp.endDate || exp.isCurrent) && (
+                    <p className="mt-0.5 font-mono text-[11px] text-[var(--on-surface-muted)]">
+                      {exp.startDate?.slice(0, 7) ?? "?"} —{" "}
+                      {exp.isCurrent
+                        ? "Present"
+                        : (exp.endDate?.slice(0, 7) ?? "?")}
+                    </p>
+                  )}
+                  {exp.bullets.length > 0 && (
+                    <ul className="mt-1.5 space-y-0.5 text-[12px] text-[var(--on-surface-muted)]">
+                      {exp.bullets.map((b, j) => (
+                        <li key={j} className="line-clamp-2">
+                          · {b}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function SkillsByCategory({
+  skills,
+}: {
+  skills: Array<{ name: string; category: string | null }>;
+}) {
+  if (skills.length === 0) {
+    return (
+      <p className="mt-1.5 text-sm text-[var(--on-surface-muted)]">—</p>
+    );
+  }
+
+  // Group skills by category. Items without a category go into "Other"
+  // so something always renders, even with sparse parser output.
+  const groups = new Map<string, string[]>();
+  for (const s of skills) {
+    const key = s.category?.trim() || "Other";
+    const list = groups.get(key) ?? [];
+    list.push(s.name);
+    groups.set(key, list);
+  }
+
+  // Stable order: Languages first, then Programming Languages, then
+  // everything else alphabetical.
+  const priority = (k: string) => {
+    if (k === "Languages") return 0;
+    if (k === "Programming Languages") return 1;
+    if (k === "Frameworks") return 2;
+    if (k === "Tools") return 3;
+    if (k === "Soft Skills") return 4;
+    if (k === "Other") return 99;
+    return 50;
+  };
+  const ordered = [...groups.entries()].sort(
+    (a, b) => priority(a[0]) - priority(b[0]) || a[0].localeCompare(b[0]),
+  );
+
+  return (
+    <div className="mt-1.5 space-y-1.5">
+      {ordered.map(([cat, names]) => (
+        <div key={cat} className="flex flex-wrap items-baseline gap-x-2">
+          <span className="text-[11px] uppercase tracking-[0.1em] text-[var(--on-surface-muted)]">
+            {cat}
+          </span>
+          <span className="text-sm text-[var(--on-surface-soft)]">
+            {names.join(" · ")}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
