@@ -492,6 +492,8 @@ const en: Dict = {
   "canvas.heading.projects": "Projects",
   "canvas.heading.certifications": "Certifications",
   "canvas.heading.custom": "Additional",
+  "canvas.heading.military": "Military Service",
+  "canvas.heading.volunteering": "Volunteering",
 
   // --- export menu ---
   "export.pdf": "PDF",
@@ -1031,6 +1033,8 @@ const he: Dict = {
   "canvas.heading.projects": "פרויקטים",
   "canvas.heading.certifications": "הסמכות",
   "canvas.heading.custom": "נוסף",
+  "canvas.heading.military": "שירות צבאי",
+  "canvas.heading.volunteering": "התנדבות",
 
   // --- export menu ---
   "export.pdf": "PDF",
@@ -1114,6 +1118,19 @@ const ENGLISH_DEFAULT_HEADINGS: Record<string, string> = {
   certifications: "Certifications",
   custom: "Additional",
 };
+
+/**
+ * Well-known headings the resume seeder writes for non-default
+ * experience buckets. Mapping them here lets us localize the section
+ * title without changing the underlying DB row — the user can still
+ * rename the heading manually and that custom value will pass through
+ * unchanged (the lookup miss returns the original string).
+ */
+const KNOWN_CUSTOM_HEADING_KEYS: Record<string, string> = {
+  "Military Service": "canvas.heading.military",
+  Volunteering: "canvas.heading.volunteering",
+};
+
 export function localizedHeading(
   heading: string,
   type: string,
@@ -1121,6 +1138,13 @@ export function localizedHeading(
 ): string {
   if (heading === ENGLISH_DEFAULT_HEADINGS[type] || heading === "") {
     return t(`canvas.heading.${type}`);
+  }
+  const known = KNOWN_CUSTOM_HEADING_KEYS[heading];
+  if (known) {
+    const localized = t(known);
+    // Translator falls back to the key itself when the locale lacks
+    // the entry; in that case prefer the original English heading.
+    return localized === known ? heading : localized;
   }
   return heading;
 }

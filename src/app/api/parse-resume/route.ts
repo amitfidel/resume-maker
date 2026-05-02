@@ -31,7 +31,13 @@ const ParsedResumeSchema = z.object({
       // Which section the entry belongs to in the original resume.
       // Lets the profile UI render Work / Military / Volunteering
       // as distinct sections even though they live in one table.
-      category: z.enum(["work", "military", "volunteer"]).default("work"),
+      //
+      // Required (no .default) because Groq's structured-output mode
+      // requires every property to appear in the schema's `required`
+      // array. The prompt instructs the model to set this explicitly,
+      // and the save action defensively coerces unknown values to
+      // "work".
+      category: z.enum(["work", "military", "volunteer"]),
     }),
   ),
   education: z.array(

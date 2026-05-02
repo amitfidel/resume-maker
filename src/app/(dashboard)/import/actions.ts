@@ -14,6 +14,7 @@ import {
 } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { requireUser } from "@/lib/auth";
+import { seedResumeFromProfile } from "@/lib/resume/seed";
 
 type ParsedResume = {
   fullName: string;
@@ -182,5 +183,16 @@ export async function saveImportedProfile(data: ParsedResume) {
     });
   }
 
-  return { success: true };
+  // Build a starter resume from the freshly-imported data so the user
+  // lands directly in the editor with everything in place — they
+  // shouldn't have to make a separate trip through /resumes/new.
+  // Title comes from the resume's owner name; the editor lets them
+  // rename it later.
+  const resumeId = await seedResumeFromProfile({
+    userId: user.id,
+    title: `${data.fullName || "My"} — Imported Resume`,
+    templateId: "modern-clean",
+  });
+
+  return { success: true, resumeId };
 }

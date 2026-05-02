@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -49,6 +50,7 @@ type ParsedData = {
 };
 
 export default function ImportPage() {
+  const router = useRouter();
   const [pasteText, setPasteText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [parsed, setParsed] = useState<ParsedData | null>(null);
@@ -116,13 +118,21 @@ export default function ImportPage() {
     if (!parsed) return;
     setIsLoading(true);
     const result = await saveImportedProfile(parsed);
-    setIsLoading(false);
     if (result?.error) {
+      setIsLoading(false);
       setError(result.error);
-    } else {
-      setSaved(true);
+      return;
     }
-  }, [parsed]);
+    // Resume created server-side — drop the user straight into the
+    // editor for it instead of a "saved!" success page. They came here
+    // to make a resume, not to admire their profile.
+    if (result?.resumeId) {
+      router.push(`/resumes/${result.resumeId}/edit`);
+      return;
+    }
+    setIsLoading(false);
+    setSaved(true);
+  }, [parsed, router]);
 
   if (saved) {
     return (

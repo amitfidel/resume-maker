@@ -22,6 +22,7 @@ import { redirect } from "next/navigation";
 import type { BlockType, SourceType } from "@/lib/resume/types";
 import { stableStringify } from "@/lib/json/stable";
 import { log } from "@/lib/log";
+import { seedResumeFromProfile } from "@/lib/resume/seed";
 
 // Map block types to their source types and default headings
 const BLOCK_SOURCE_MAP: Record<
@@ -45,168 +46,22 @@ export async function createResume(formData: FormData) {
   const templateId =
     (formData.get("templateId") as string) || "modern-clean";
 
-  // Get career profile
+  // No profile? Send the user to fill one out first; without it
+  // there's nothing to seed the resume from.
   const profile = await db.query.careerProfiles.findFirst({
     where: eq(careerProfiles.userId, user.id),
   });
-
   if (!profile) {
     redirect("/profile");
   }
 
-  // Create resume
-  const [resume] = await db
-    .insert(resumes)
-    .values({
-      userId: user.id,
-      title,
-      templateId,
-      status: "draft",
-    })
-    .returning();
+  const resumeId = await seedResumeFromProfile({
+    userId: user.id,
+    title,
+    templateId,
+  });
 
-  // Load all profile items to populate blocks
-  const [expList, eduList, skillList, projList, certList] = await Promise.all([
-    db.query.workExperiences.findMany({
-      where: eq(workExperiences.profileId, profile.id),
-      orderBy: (e, { desc }) => [desc(e.sortOrder)],
-    }),
-    db.query.education.findMany({
-      where: eq(education.profileId, profile.id),
-      orderBy: (e, { desc }) => [desc(e.sortOrder)],
-    }),
-    db.query.skills.findMany({
-      where: eq(skills.profileId, profile.id),
-      orderBy: (s, { asc }) => [asc(s.category), asc(s.sortOrder)],
-    }),
-    db.query.projects.findMany({
-      where: eq(projects.profileId, profile.id),
-      orderBy: (p, { desc }) => [desc(p.sortOrder)],
-    }),
-    db.query.certifications.findMany({
-      where: eq(certifications.profileId, profile.id),
-      orderBy: (c, { desc }) => [desc(c.sortOrder)],
-    }),
-  ]);
-
-  // Create blocks in standard order and populate with profile items
-  let sortOrder = 0;
-
-  // Summary block (always included if profile has a summary)
-  if (profile.summary) {
-    await db.insert(resumeBlocks).values({
-      resumeId: resume.id,
-      blockType: "summary",
-      sortOrder: sortOrder++,
-    });
-  }
-
-  // Experience block
-  if (expList.length > 0) {
-    const [block] = await db
-      .insert(resumeBlocks)
-      .values({
-        resumeId: resume.id,
-        blockType: "experience",
-        sortOrder: sortOrder++,
-      })
-      .returning();
-
-    await db.insert(resumeBlockItems).values(
-      expList.map((exp, i) => ({
-        blockId: block.id,
-        sourceType: "work_experience" as const,
-        sourceId: exp.id,
-        sortOrder: i,
-      }))
-    );
-  }
-
-  // Education block
-  if (eduList.length > 0) {
-    const [block] = await db
-      .insert(resumeBlocks)
-      .values({
-        resumeId: resume.id,
-        blockType: "education",
-        sortOrder: sortOrder++,
-      })
-      .returning();
-
-    await db.insert(resumeBlockItems).values(
-      eduList.map((edu, i) => ({
-        blockId: block.id,
-        sourceType: "education" as const,
-        sourceId: edu.id,
-        sortOrder: i,
-      }))
-    );
-  }
-
-  // Skills block
-  if (skillList.length > 0) {
-    const [block] = await db
-      .insert(resumeBlocks)
-      .values({
-        resumeId: resume.id,
-        blockType: "skills",
-        sortOrder: sortOrder++,
-      })
-      .returning();
-
-    await db.insert(resumeBlockItems).values(
-      skillList.map((skill, i) => ({
-        blockId: block.id,
-        sourceType: "skill" as const,
-        sourceId: skill.id,
-        sortOrder: i,
-      }))
-    );
-  }
-
-  // Projects block
-  if (projList.length > 0) {
-    const [block] = await db
-      .insert(resumeBlocks)
-      .values({
-        resumeId: resume.id,
-        blockType: "projects",
-        sortOrder: sortOrder++,
-      })
-      .returning();
-
-    await db.insert(resumeBlockItems).values(
-      projList.map((proj, i) => ({
-        blockId: block.id,
-        sourceType: "project" as const,
-        sourceId: proj.id,
-        sortOrder: i,
-      }))
-    );
-  }
-
-  // Certifications block
-  if (certList.length > 0) {
-    const [block] = await db
-      .insert(resumeBlocks)
-      .values({
-        resumeId: resume.id,
-        blockType: "certifications",
-        sortOrder: sortOrder++,
-      })
-      .returning();
-
-    await db.insert(resumeBlockItems).values(
-      certList.map((cert, i) => ({
-        blockId: block.id,
-        sourceType: "certification" as const,
-        sourceId: cert.id,
-        sortOrder: i,
-      }))
-    );
-  }
-
-  redirect(`/resumes/${resume.id}/edit`);
+  redirect(`/resumes/${resumeId}/edit`);
 }
 
 /**
