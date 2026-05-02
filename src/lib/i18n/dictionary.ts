@@ -438,9 +438,11 @@ const en: Dict = {
   "import.parsed.experience": "Work experience",
   "import.parsed.education": "Education",
   "import.parsed.skills": "Skills",
-  "import.save": "Save to profile",
+  "import.save": "Save and open resume",
   "import.saving": "Saving…",
   "import.start_over": "Start over",
+  "import.replace_warning":
+    "Saving replaces your current profile data (work experience, education, skills, projects, certifications) with what was just parsed, then opens a fresh resume built from it. Your existing resumes are not deleted, but their content may go out of sync — use \"Rebuild from profile\" on each one to refresh.",
 
   // --- version history ---
   "history.empty.title.part1": "No versions",
@@ -984,9 +986,11 @@ const he: Dict = {
   "import.parsed.experience": "ניסיון תעסוקתי",
   "import.parsed.education": "השכלה",
   "import.parsed.skills": "מיומנויות",
-  "import.save": "שמור בפרופיל",
+  "import.save": "שמור ופתח קורות חיים",
   "import.saving": "שומר…",
   "import.start_over": "התחל מחדש",
+  "import.replace_warning":
+    "שמירה תחליף את נתוני הפרופיל הנוכחיים (ניסיון תעסוקתי, השכלה, מיומנויות, פרויקטים, הסמכות) במה שנותח כעת, ותפתח קורות חיים חדשים. קורות חיים קיימים לא יימחקו, אבל התוכן עלול לא להיות מסונכרן — השתמש ב\"בנה מחדש מהפרופיל\" על כל אחד כדי לרענן.",
 
   // --- version history ---
   "history.empty.title.part1": "עדיין אין",

@@ -91,6 +91,27 @@ export async function saveImportedProfile(data: ParsedResume) {
     })
     .where(eq(careerProfiles.id, profile.id));
 
+  // Wipe the existing importable rows before inserting the new ones.
+  // Without this every re-import doubles your data — the previous
+  // version of this action just appended. We replace because the user
+  // mental model of "I'm importing my resume" expects the imported PDF
+  // to BE the profile, not to be added to it. Resume rows themselves
+  // (and their resume_blocks) are NOT deleted; they may reference the
+  // about-to-be-deleted source rows by id, but that's OK — the
+  // resolver tolerates dangling source ids and the user can run
+  // "Rebuild from profile" on any resume to refresh it.
+  //
+  // Cascades: workExperiences -> experienceBullets, projects ->
+  // projectBullets are set in schema, so the bullets disappear
+  // automatically with their parents.
+  await Promise.all([
+    db.delete(workExperiences).where(eq(workExperiences.profileId, profile.id)),
+    db.delete(education).where(eq(education.profileId, profile.id)),
+    db.delete(skills).where(eq(skills.profileId, profile.id)),
+    db.delete(projects).where(eq(projects.profileId, profile.id)),
+    db.delete(certifications).where(eq(certifications.profileId, profile.id)),
+  ]);
+
   // Add work experiences
   for (let i = 0; i < data.workExperiences.length; i++) {
     const exp = data.workExperiences[i];

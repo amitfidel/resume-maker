@@ -146,11 +146,23 @@ export async function POST(req: Request) {
 
     // openai/gpt-oss-120b is much stronger at structured JSON output
     // than llama-3.3-70b-versatile on Groq. Override with GROQ_MODEL.
+    //
+    // Token budget tuning: Groq free tier caps this model at 8000
+    // tokens per minute (request total = system + user + maxOutput).
+    // - System prompt is ~2K tokens.
+    // - User prompt = the extracted resume text, ~1-2K tokens.
+    // - maxOutputTokens=4000 leaves ~2K headroom inside the 8K cap
+    //   and is still generous: a fully populated resume JSON rarely
+    //   exceeds 2K tokens.
+    // If the model still truncates on a very long resume, swap to
+    // openai/gpt-oss-20b (same family, smaller, higher TPM ceiling)
+    // or the llama-3.1-8b-instant model.
     const { object: parsed } = await generateObject({
       model: groq(process.env.GROQ_MODEL || "openai/gpt-oss-120b"),
       schema: ParsedResumeSchema,
       system,
       prompt,
+      maxOutputTokens: 4000,
     });
 
     return Response.json({ data: parsed });

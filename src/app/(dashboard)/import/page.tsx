@@ -333,6 +333,9 @@ export default function ImportPage() {
             </div>
           </div>
 
+          <p className="rounded-[10px] bg-[var(--surface-sunk)] px-3 py-2 text-[12px] text-[var(--on-surface-soft)]">
+            {t("import.replace_warning")}
+          </p>
           <div className="flex flex-wrap gap-3">
             <Button
               onClick={handleSave}
