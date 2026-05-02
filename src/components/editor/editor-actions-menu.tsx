@@ -25,9 +25,14 @@ import {
   Share2,
   Check,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { TemplatePicker } from "./template-picker";
-import { saveResumeVersion } from "@/app/(dashboard)/resumes/actions";
+import {
+  saveResumeVersion,
+  rebuildResumeFromProfile,
+} from "@/app/(dashboard)/resumes/actions";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { useT, useI18n } from "@/lib/i18n/context";
 
 /**
@@ -54,6 +59,7 @@ export function EditorActionsMenu({
   const t = useT();
   const { locale } = useI18n();
   const router = useRouter();
+  const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
 
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -67,6 +73,27 @@ export function EditorActionsMenu({
       await saveResumeVersion(resumeId, summary.trim());
       setSummary("");
       setSaveOpen(false);
+      router.refresh();
+    });
+  };
+
+  const handleRebuild = async () => {
+    const ok = await confirm({
+      title: t("editor.rebuild.confirm_title"),
+      description: t("editor.rebuild.confirm_desc"),
+      confirmLabel: t("editor.rebuild.confirm_cta"),
+      destructive: true,
+    });
+    if (!ok) return;
+    startTransition(async () => {
+      const result = await rebuildResumeFromProfile(resumeId);
+      if (result?.error) {
+        // The confirm dialog already closed; surface the error via
+        // alert so the user knows the rebuild didn't take effect.
+        // Toast would be nicer if we wired sonner into this flow.
+        alert(`Rebuild failed: ${result.error}`);
+        return;
+      }
       router.refresh();
     });
   };
@@ -123,6 +150,16 @@ export function EditorActionsMenu({
             <span>
               {shareCopied ? t("resumes.share.copied") : t("resumes.share")}
             </span>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={handleRebuild}
+            disabled={isPending}
+            className="gap-2.5"
+          >
+            <RefreshCw
+              className={`h-4 w-4 text-[var(--on-surface-muted)] ${isPending ? "animate-spin" : ""}`}
+            />
+            <span>{t("editor.rebuild")}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

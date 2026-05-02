@@ -175,6 +175,11 @@ const en: Dict = {
   "editor.undo": "Undo (Ctrl+Z)",
   "editor.redo": "Redo (Ctrl+Shift+Z)",
   "editor.more": "More actions",
+  "editor.rebuild": "Rebuild from profile",
+  "editor.rebuild.confirm_title": "Rebuild this resume from your profile?",
+  "editor.rebuild.confirm_desc":
+    "Replaces this resume's sections with a fresh layout from your current career profile (Work / Military / Volunteering split into separate sections, education, skills, etc.). Your profile data isn't touched. This is reversible — Ctrl+Z restores the prior layout.",
+  "editor.rebuild.confirm_cta": "Rebuild",
   "editor.save_version.dialog_title": "Save a Version",
   "editor.save_version.dialog_desc":
     "Create a snapshot you can return to later. Good for checkpointing before big changes.",
@@ -717,6 +722,11 @@ const he: Dict = {
   "editor.undo": "ביטול (Ctrl+Z)",
   "editor.redo": "ביצוע מחדש (Ctrl+Shift+Z)",
   "editor.more": "פעולות נוספות",
+  "editor.rebuild": "בנה מחדש מהפרופיל",
+  "editor.rebuild.confirm_title": "לבנות מחדש את קורות החיים מהפרופיל?",
+  "editor.rebuild.confirm_desc":
+    "הסעיפים בקובץ הזה יוחלפו בסידור חדש מהפרופיל הקיים שלך (עבודה / שירות צבאי / התנדבות מופרדים לסעיפים נפרדים, השכלה, מיומנויות וכו'). נתוני הפרופיל עצמו לא משתנים. הפעולה הפיכה — Ctrl+Z משחזר את הסידור הקודם.",
+  "editor.rebuild.confirm_cta": "בנה מחדש",
   "editor.save_version.dialog_title": "שמירת גרסה",
   "editor.save_version.dialog_desc":
     "צילום מצב שתוכל לחזור אליו אחר כך. שימושי לפני שינויים גדולים.",

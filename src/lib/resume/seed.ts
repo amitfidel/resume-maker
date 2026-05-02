@@ -55,6 +55,31 @@ export async function seedResumeFromProfile(args: {
     })
     .returning();
 
+  await seedBlocksForResume(resume.id, args.userId);
+  return resume.id;
+}
+
+/**
+ * Add the standard block layout (summary + experience buckets +
+ * education + skills + projects + certifications) to an existing
+ * resume row. Caller is responsible for clearing any existing blocks
+ * first if rebuilding — this function only inserts.
+ *
+ * Used by:
+ *   - seedResumeFromProfile (new resume from scratch)
+ *   - rebuildResumeFromProfile (wipe + redo on an existing resume)
+ */
+export async function seedBlocksForResume(
+  resumeId: string,
+  userId: string,
+): Promise<void> {
+  const profile = await db.query.careerProfiles.findFirst({
+    where: eq(careerProfiles.userId, userId),
+  });
+  if (!profile) {
+    throw new Error("Career profile not found for user");
+  }
+
   // Pull all profile data in parallel.
   const [expList, eduList, skillList, projList, certList] = await Promise.all([
     db.query.workExperiences.findMany({
@@ -84,7 +109,7 @@ export async function seedResumeFromProfile(args: {
   // Summary
   if (profile.summary) {
     await db.insert(resumeBlocks).values({
-      resumeId: resume.id,
+      resumeId,
       blockType: "summary",
       sortOrder: sortOrder++,
     });
@@ -111,7 +136,7 @@ export async function seedResumeFromProfile(args: {
     const [block] = await db
       .insert(resumeBlocks)
       .values({
-        resumeId: resume.id,
+        resumeId,
         blockType: "experience",
         headingOverride: bucket.heading,
         sortOrder: sortOrder++,
@@ -133,7 +158,7 @@ export async function seedResumeFromProfile(args: {
     const [block] = await db
       .insert(resumeBlocks)
       .values({
-        resumeId: resume.id,
+        resumeId,
         blockType: "education",
         sortOrder: sortOrder++,
       })
@@ -154,7 +179,7 @@ export async function seedResumeFromProfile(args: {
     const [block] = await db
       .insert(resumeBlocks)
       .values({
-        resumeId: resume.id,
+        resumeId,
         blockType: "skills",
         sortOrder: sortOrder++,
       })
@@ -175,7 +200,7 @@ export async function seedResumeFromProfile(args: {
     const [block] = await db
       .insert(resumeBlocks)
       .values({
-        resumeId: resume.id,
+        resumeId,
         blockType: "projects",
         sortOrder: sortOrder++,
       })
@@ -196,7 +221,7 @@ export async function seedResumeFromProfile(args: {
     const [block] = await db
       .insert(resumeBlocks)
       .values({
-        resumeId: resume.id,
+        resumeId,
         blockType: "certifications",
         sortOrder: sortOrder++,
       })
@@ -211,6 +236,4 @@ export async function seedResumeFromProfile(args: {
       })),
     );
   }
-
-  return resume.id;
 }

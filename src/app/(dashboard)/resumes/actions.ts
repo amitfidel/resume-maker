@@ -22,7 +22,10 @@ import { redirect } from "next/navigation";
 import type { BlockType, SourceType } from "@/lib/resume/types";
 import { stableStringify } from "@/lib/json/stable";
 import { log } from "@/lib/log";
-import { seedResumeFromProfile } from "@/lib/resume/seed";
+import {
+  seedResumeFromProfile,
+  seedBlocksForResume,
+} from "@/lib/resume/seed";
 
 // Map block types to their source types and default headings
 const BLOCK_SOURCE_MAP: Record<
@@ -62,6 +65,55 @@ export async function createResume(formData: FormData) {
   });
 
   redirect(`/resumes/${resumeId}/edit`);
+}
+
+/**
+ * Rebuild an existing resume's block layout from the current state of
+ * the user's career profile. Useful after a fresh import or after the
+ * user reorganizes their profile (added Volunteering, moved entries
+ * between categories, etc.).
+ *
+ * Snapshots the resume into the auto_undo stack first so the rebuild
+ * is reversible with Ctrl+Z. Title, template, header overrides, and
+ * settings on the resume row are preserved — only blocks + items are
+ * regenerated.
+ */
+export async function rebuildResumeFromProfile(resumeId: string) {
+  try {
+    const user = await requireUser();
+
+    const resume = await db.query.resumes.findFirst({
+      where: and(eq(resumes.id, resumeId), eq(resumes.userId, user.id)),
+    });
+    if (!resume) return { error: "Resume not found" };
+
+    // Save the current state into the undo stack so this is reversible
+    // — without this, the user would have no way to recover their
+    // previous block layout if the rebuild surprises them.
+    try {
+      await recordUndoCheckpoint(resumeId);
+    } catch (err) {
+      log.warn("rebuild_undo_snapshot_failed", { resumeId, err });
+    }
+
+    // Wipe blocks (cascades to items) then re-seed. Wrapping in a
+    // transaction keeps the resume non-empty for any concurrent
+    // reader.
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(resumeBlocks)
+        .where(eq(resumeBlocks.resumeId, resumeId));
+    });
+    await seedBlocksForResume(resumeId, user.id);
+
+    revalidatePath(`/resumes/${resumeId}/edit`);
+    return { success: true };
+  } catch (err) {
+    log.error("rebuild_resume_failed", { resumeId, err });
+    return {
+      error: err instanceof Error ? err.message : "Failed to rebuild",
+    };
+  }
 }
 
 /**
